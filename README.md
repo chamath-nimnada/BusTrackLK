@@ -1,6 +1,5 @@
 # BusTrackLK
 Help passengers to track bus locations, view schedules and book bus tickets. Also have an option to find lost packages.
-
 (Passenger App + Driver App + Admin Web App)
 
 
