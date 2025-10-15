@@ -1,26 +1,36 @@
 # BusTrackLK
 Passenger App + Driver App + Admin Web App 
 
----
+# 🚗 Ride System – Project Structure
 
-### 📁 Overview
-
-| Directory | Description |
-|------------|-------------|
-| `backend/` | Microservices for admin, passenger, and driver operations. |
-| `web-admin/` | React dashboard for administrative tasks. |
-| `mobile/` | Flutter-based mobile apps for driver and passenger roles. |
-| `docs/` | Contains architecture, API contracts, and deployment guides. |
-| `docker-compose.yml` | Simplifies running all services locally with Docker. |
-
----
-
-### 🧩 Notes
-- The project follows a **microservices architecture**.  
-- `common-library` promotes **code reuse** across backend services.  
-- `api-gateway` (if enabled) provides centralized routing, authentication, and rate limiting.  
-- The structure is scalable — ideal for future integration with CI/CD, Kubernetes, etc.
-
----
-
-Would you like me to add **GitHub badges** (e.g., build status, license, tech stack) and a **visual architecture diagram** section next? It’ll make your README look much more professional.
+```text
+ride_system/
+├── backend/
+│   ├── admin-service/
+│   │
+│   ├── passenger-service/
+│   │
+│   ├── driver-service/
+│   │
+│   ├── api-gateway/                   # Optional, for unified routing
+│   │   ├── src/main/java/com/example/gateway/
+│   │   └── pom.xml
+│   │
+│   └── common-library/                # Shared DTOs, utils, auth logic
+│       ├── src/main/java/com/example/common/
+│       └── pom.xml
+│
+├── web-admin/                         # React frontend for admins
+│
+├── mobile/                            # Flutter apps
+│   ├── passenger-app/
+│   │
+│   ├── driver-app/
+│
+├── docs/                              # System-level docs
+│   ├── architecture.md
+│   ├── api_contracts.md
+│   ├── deployment_plan.md
+│   └── env_variables.md
+│
+└── docker-compose.yml                 # Optional for running all services together
