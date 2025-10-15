@@ -1,7 +1,7 @@
 # BusTrackLK
 Passenger App + Driver App + Admin Web App 
 
-# 🚗 Ride System – Project Structure
+## Project Structure
 
 ```text
 ride_system/
