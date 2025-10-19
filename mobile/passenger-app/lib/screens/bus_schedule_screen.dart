@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:passenger_app/widgets/bus_booking_result_widget.dart';
+import 'package:passenger_app/widgets/schedule_result_widget.dart'; // Import the new widget
 
-class BusBookingScreen extends StatefulWidget {
+class BusScheduleScreen extends StatefulWidget {
   @override
-  _BusBookingScreenState createState() => _BusBookingScreenState();
+  _BusScheduleScreenState createState() => _BusScheduleScreenState();
 }
 
-class _BusBookingScreenState extends State<BusBookingScreen> {
+class _BusScheduleScreenState extends State<BusScheduleScreen> {
   bool _isSearched = false;
-  List<Map<String, dynamic>> _busResults = [];
-
-  // --- CHANGE 1: Added state for the selected date ---
+  List<Map<String, dynamic>> _scheduleResults = [];
   DateTime _selectedDate = DateTime.now();
 
   final List<String> _locations = ['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Matara'];
   String? _startLocation;
   String? _endLocation;
 
-  // --- CHANGE 2: Added function to show the date picker ---
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -27,18 +24,16 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
   void _performSearch() {
     setState(() {
       _isSearched = true;
-      _busResults = [
-        {'route': 'Route 01', 'start': 'Colombo Fort', 'end': 'Kandy', 'seats': 21},
-        {'route': 'Route 01-Express', 'start': 'Colombo', 'end': 'Kandy', 'seats': 5},
+      _scheduleResults = [
+        {'route': 'Route 01', 'startLoc': 'Colombo Fort', 'startTime': '13.20 PM', 'endLoc': 'Kandy', 'endTime': '15.30 PM'},
+        {'route': 'Route 01', 'startLoc': 'Colombo Fort', 'startTime': '14.00 PM', 'endLoc': 'Kandy', 'endTime': '16.10 PM'},
       ];
     });
   }
@@ -46,7 +41,7 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
   void _clearSearch() {
     setState(() {
       _isSearched = false;
-      _busResults = [];
+      _scheduleResults = [];
       _startLocation = null;
       _endLocation = null;
       _selectedDate = DateTime.now();
@@ -80,7 +75,6 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
             children: [
               _buildSearchCard(),
               SizedBox(height: 30),
-              // --- CHANGE 4: The results area now handles all states ---
               _buildResultsArea(),
             ],
           ),
@@ -107,20 +101,12 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
           Divider(color: Colors.white24, height: 30),
           Row(
             children: [
-              // --- CHANGE 3: The hardcoded date is now a button ---
               InkWell(
                 onTap: () => _selectDate(context),
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white30),
-                  ),
-                  child: Text(
-                    DateFormat('yyyy.MM.dd').format(_selectedDate),
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.2), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white30)),
+                  child: Text(DateFormat('yyyy.MM.dd').format(_selectedDate), style: TextStyle(color: Colors.white)),
                 ),
               ),
               SizedBox(width: 10),
@@ -142,8 +128,8 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
     );
   }
 
+  // --- THIS IS THE MISSING FUNCTION THAT CAUSED THE ERROR ---
   Widget _buildLocationDropdown({required bool isStart}) {
-    // ... (This function remains unchanged)
     return DropdownButtonFormField<String>(
       value: isStart ? _startLocation : _endLocation,
       onChanged: (value) {
@@ -166,31 +152,15 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
       }).toList(),
     );
   }
+  // --- END OF MISSING FUNCTION ---
 
-  // --- CHANGE 4: This new widget handles all 3 states for the results area ---
   Widget _buildResultsArea() {
-    // State 1: Before searching
     if (!_isSearched) {
-      return Container(
-        height: 300,
-        alignment: Alignment.center,
-        child: Text(
-          'Select locations and search',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
-        ),
-      );
+      return Container(height: 300, alignment: Alignment.center, child: Text('Select locations and search', style: TextStyle(color: Colors.white54, fontSize: 16)));
     }
-
-    // State 2: After searching, but no results found
-    if (_busResults.isEmpty) {
-      return Container(
-        height: 200,
-        alignment: Alignment.center,
-        child: Text('No Available Bookings', style: TextStyle(color: Colors.white54, fontSize: 16)),
-      );
+    if (_scheduleResults.isEmpty) {
+      return Container(height: 300, alignment: Alignment.center, child: Text('No Available Buses', style: TextStyle(color: Colors.white54, fontSize: 16)));
     }
-
-    // State 3: After searching, and results are found
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,14 +169,15 @@ class _BusBookingScreenState extends State<BusBookingScreen> {
         ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          itemCount: _busResults.length,
+          itemCount: _scheduleResults.length,
           itemBuilder: (context, index) {
-            final bus = _busResults[index];
-            return BusResultWidget(
+            final bus = _scheduleResults[index];
+            return ScheduleResultWidget(
               route: bus['route']!,
-              startLocation: bus['start']!,
-              endLocation: bus['end']!,
-              availableSeats: bus['seats']!,
+              startLocation: bus['startLoc']!,
+              startTime: bus['startTime']!,
+              endLocation: bus['endLoc']!,
+              endTime: bus['endTime']!,
             );
           },
         ),
