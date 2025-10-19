@@ -58,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(50.0),
         child: Text(
           '© 2025 BusTrackLK App. All Rights Reserved.',
           textAlign: TextAlign.center,

@@ -4,8 +4,10 @@ import 'package:intl/intl.dart'; // For date formatting
 
 //screens
 import 'package:passenger_app/screens/about_screen.dart';
+import 'package:passenger_app/screens/auth_screen.dart';
+import 'package:passenger_app/screens/lost_item_screen.dart';
 
-import 'auth_screen.dart';
+import 'bus_booking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -123,37 +125,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                   children: [
+                    // CHANGE: Pass 'context' as the first argument to each call
                     _buildFeatureCard(
+                      context, // <-- Add this
                       'Bus Tracking',
                       'Real-time location',
                       Icons.directions_bus,
                       Color(0xFF3B82F6), // Blue
                     ),
                     _buildFeatureCard(
+                      context, // <-- Add this
                       'Bus Schedule',
                       'Timetables & Routes',
                       Icons.schedule,
                       Color(0xFF10B981), // Green
                     ),
                     _buildFeatureCard(
+                      context, // <-- Add this
                       'Ticket Booking',
                       'Book your seats',
                       Icons.airplane_ticket,
-                      Color(0xFF4F46E5), // Purple
+                      Color(0xFF6D28D9), // Purple
                     ),
                     _buildFeatureCard(
-                      'Lost Packages',
+                      context, // <-- Add this
+                      'Packages',
                       'Track your items',
                       Icons.luggage,
                       Color(0xFFF59E0B), // Orange
                     ),
                     _buildFeatureCard(
+                      context, // <-- Add this
                       'Profile',
                       'Your account details',
                       Icons.person,
                       Color(0xFF8B5CF6), // Dark Purple
                     ),
                     _buildFeatureCard(
+                      context, // <-- Add this
                       'About',
                       'Learn more about\nus',
                       Icons.info,
@@ -183,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFeatureCard(
-      String title, String subtitle, IconData icon, Color color) {
+      BuildContext context, String title, String subtitle, IconData icon, Color color) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(
@@ -192,16 +201,25 @@ class _HomeScreenState extends State<HomeScreen> {
       elevation: 5,
       child: InkWell(
         onTap: () {
-          // Navigations
           if (title == 'About') {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AboutScreen()),
             );
-          } else if (title == 'Profile') { // Add this condition
+          } else if (title == 'Profile') {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AuthScreen()),
+            );
+          } else if (title == 'Packages') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LostItemScreen()),
+            );
+          } else if (title == 'Ticket Booking') { // <-- ADD THIS
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => BusBookingScreen()),
             );
           } else {
             // Handle taps for other features
