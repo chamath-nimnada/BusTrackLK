@@ -6,8 +6,10 @@ import 'package:intl/intl.dart'; // For date formatting
 import 'package:passenger_app/screens/about_screen.dart';
 import 'package:passenger_app/screens/auth_screen.dart';
 import 'package:passenger_app/screens/lost_item_screen.dart';
+import 'package:passenger_app/screens/bus_booking_screen.dart';
+import 'package:passenger_app/screens/bus_schedule_screen.dart';
 
-import 'bus_booking_screen.dart';
+import 'bus_tracking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -216,12 +218,21 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(builder: (context) => LostItemScreen()),
             );
-          } else if (title == 'Ticket Booking') { // <-- ADD THIS
+          } else if (title == 'Bus Schedule') { // <-- ADD THIS
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => BusBookingScreen()),
+              MaterialPageRoute(builder: (context) => BusScheduleScreen()),
             );
-          } else {
+          } else if (title == 'Ticket Booking') {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => BusBookingScreen()));
+          } else if (title == 'Bus Tracking') { // <-- ADD THIS
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => BusTrackingScreen()),
+            );
+          }else {
             // Handle taps for other features
             print('$title tapped!');
           }

@@ -78,7 +78,7 @@ class _LostItemScreenState extends State<LostItemScreen> {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(40.0),
+        padding: const EdgeInsets.all(50.0),
         child: Text(
           '© 2025 BusTrackLK App. All Rights Reserved.',
           textAlign: TextAlign.center,
@@ -141,7 +141,9 @@ class _LostItemScreenState extends State<LostItemScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () async {
-          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => LostItemSuccessScreen()),
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LostItemSuccessScreen()),
           );
           if (result == true) {
             Navigator.pop(context);
