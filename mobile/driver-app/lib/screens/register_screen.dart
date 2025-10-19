@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'registration_success_screen.dart';
+import '../widgets/date_time_badges.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -49,39 +50,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '03 August 2025',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '12:30 AM',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ),
-                    ],
+                  const DateTimeBadges(
+                    axis: Axis.vertical,
+                    textStyle: TextStyle(color: Colors.white70, fontSize: 11),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    borderRadius: 12,
+                    spacing: 4,
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(

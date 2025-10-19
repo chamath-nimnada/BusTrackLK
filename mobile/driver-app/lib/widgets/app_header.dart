@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../utils/colors.dart';
 import '../utils/constants.dart';
-import 'package:intl/intl.dart';
+import '../utils/language_provider.dart';
 
 class AppHeader extends StatelessWidget {
   final DateTime? dateTime;
@@ -15,8 +17,23 @@ class AppHeader extends StatelessWidget {
     this.onLanguageChanged,
   }) : super(key: key);
 
+  String _normalizeLanguage(String? value) {
+    switch (value) {
+      case 'සිංහල':
+        return 'Sinhala';
+      case 'தமிழ்':
+        return 'Tamil';
+      default:
+        return value ?? 'English';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final currentLang = language != null
+        ? _normalizeLanguage(language)
+        : languageProvider.language;
     final now = dateTime ?? DateTime.now();
     final dateStr = DateFormat(AppConstants.dateFormat).format(now);
     final timeStr = DateFormat(AppConstants.timeFormat).format(now);
@@ -84,15 +101,20 @@ class AppHeader extends StatelessWidget {
               const SizedBox(height: 8),
               DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: language ?? 'English',
+                  value: currentLang,
                   dropdownColor: AppColors.card,
                   style: const TextStyle(color: AppColors.textPrimary),
                   items: const [
                     DropdownMenuItem(value: 'English', child: Text('English')),
-                    DropdownMenuItem(value: 'සිංහල', child: Text('සිංහල')),
-                    DropdownMenuItem(value: 'தமிழ்', child: Text('தமிழ்')),
+                    DropdownMenuItem(value: 'Sinhala', child: Text('සිංහල')),
+                    DropdownMenuItem(value: 'Tamil', child: Text('தமிழ்')),
                   ],
-                  onChanged: onLanguageChanged,
+                  onChanged: (value) {
+                    if (value != null) {
+                      languageProvider.setLanguage(value);
+                      onLanguageChanged?.call(value);
+                    }
+                  },
                   icon: const Icon(
                     Icons.keyboard_arrow_down,
                     color: AppColors.textPrimary,

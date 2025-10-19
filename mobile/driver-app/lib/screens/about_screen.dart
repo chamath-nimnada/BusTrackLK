@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
+import '../utils/language_provider.dart';
 
 class AboutScreen extends StatefulWidget {
   final String driverName;
@@ -13,101 +15,16 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
-  String selectedLanguage = 'English';
+  // Remove local selectedLanguage; use Provider instead
 
   @override
   Widget build(BuildContext context) {
+    final selectedLanguage = Provider.of<LanguageProvider>(context).language;
     return Scaffold(
       backgroundColor: const Color(0xFF1A202C),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Back button
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  // App name
-                  const Text(
-                    'BusTrackLK',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Bus Number Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4263EB),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      widget.busNo,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  // Language Dropdown
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4263EB),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedLanguage,
-                        dropdownColor: const Color(0xFF4263EB),
-                        icon: const Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              selectedLanguage = newValue;
-                            });
-                          }
-                        },
-                        items: <String>['English', 'සිංහල', 'தமிழ்']
-                            .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            })
-                            .toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             // Main Content
             Expanded(
               child: SingleChildScrollView(
@@ -174,7 +91,12 @@ class _AboutScreenState extends State<AboutScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(
+                                  red: 255,
+                                  green: 255,
+                                  blue: 255,
+                                  alpha: 51,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Column(
@@ -206,7 +128,12 @@ class _AboutScreenState extends State<AboutScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(
+                                  red: 255,
+                                  green: 255,
+                                  blue: 255,
+                                  alpha: 51,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Column(
@@ -238,7 +165,12 @@ class _AboutScreenState extends State<AboutScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(
+                                  red: 255,
+                                  green: 255,
+                                  blue: 255,
+                                  alpha: 51,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Column(

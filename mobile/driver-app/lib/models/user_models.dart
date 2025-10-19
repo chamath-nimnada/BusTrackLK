@@ -2,7 +2,7 @@ class UserModel {
   final String phoneNumber;
   final String password;
 
-  UserModel({required this.phoneNumber, required this.password});
+  const UserModel({required this.phoneNumber, required this.password});
 
   // For serialization (if needed)
   Map<String, dynamic> toJson() => {
@@ -16,4 +16,27 @@ class UserModel {
       password: json['password'] as String,
     );
   }
+
+  UserModel copyWith({String? phoneNumber, String? password}) {
+    return UserModel(
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      password: password ?? this.password,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is UserModel &&
+        other.phoneNumber == phoneNumber &&
+        other.password == password;
+  }
+
+  @override
+  int get hashCode => Object.hash(phoneNumber, password);
+
+  @override
+  String toString() =>
+      'UserModel(phoneNumber: '
+      '$phoneNumber, password: ****)';
 }

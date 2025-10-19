@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
+import '../widgets/date_time_badges.dart';
 import 'home_screen.dart';
+import 'package:provider/provider.dart';
+import '../utils/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -74,42 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-            // Date and Time
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '20 August 2025',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '10:30 AM',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
+            // Date and Time (live)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: DateTimeBadges(),
             ),
             const SizedBox(height: 16),
             // Card with tabs and form
@@ -253,33 +224,80 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Navigate to Home screen after login
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const HomeScreen(),
+                            Consumer<AuthProvider>(
+                              builder: (context, auth, _) => SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: auth.isLoading
+                                      ? null
+                                      : () async {
+                                          final ok = await context
+                                              .read<AuthProvider>()
+                                              .login(
+                                                _phoneController.text,
+                                                _passwordController.text,
+                                              );
+                                          if (!mounted) return;
+                                          if (ok) {
+                                            Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    HomeScreen(
+                                                      driverName:
+                                                          auth
+                                                              .driver
+                                                              ?.driverName ??
+                                                          'Driver',
+                                                      busNo:
+                                                          auth.driver?.busNo ??
+                                                          '---',
+                                                      phoneNo:
+                                                          auth
+                                                              .driver
+                                                              ?.phoneNo ??
+                                                          '',
+                                                    ),
+                                              ),
+                                              (route) => false,
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  auth.error ?? 'Login failed',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4263EB),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
                                     ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4263EB),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                  child: auth.isLoading
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text(
+                                          'Login',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),

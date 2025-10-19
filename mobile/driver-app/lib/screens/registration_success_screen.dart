@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Login_screen.dart';
+import 'login_screen.dart';
+import '../widgets/date_time_badges.dart';
 
 class RegistrationSuccessScreen extends StatelessWidget {
   const RegistrationSuccessScreen({Key? key}) : super(key: key);
@@ -39,39 +40,12 @@ class RegistrationSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '20 August 2025',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '12:32 AM',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ),
-                    ],
+                  const DateTimeBadges(
+                    axis: Axis.vertical,
+                    textStyle: TextStyle(color: Colors.white70, fontSize: 11),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    borderRadius: 12,
+                    spacing: 4,
                   ),
                   const SizedBox(width: 8),
                   Container(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
+import '../utils/language_provider.dart';
 import 'Login_screen.dart';
+import '../utils/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String driverName;
@@ -19,128 +22,20 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String selectedLanguage = 'English';
+  // Remove local selectedLanguage; use Provider instead
 
   @override
   Widget build(BuildContext context) {
+    final selectedLanguage = Provider.of<LanguageProvider>(context).language;
+    final auth = Provider.of<AuthProvider>(context, listen: true);
+    final driverName = auth.driver?.driverName ?? widget.driverName;
+    final phoneNo = auth.driver?.phoneNo ?? widget.phoneNo;
     return Scaffold(
       backgroundColor: const Color(0xFF1A202C),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.get('app_name', selectedLanguage),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          widget.driverName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          widget.busNo,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Language selector dropdown
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white30),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedLanguage,
-                        dropdownColor: const Color(0xFF2D3748),
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'English',
-                            child: Text('English'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Sinhala',
-                            child: Text('සිංහල'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Tamil',
-                            child: Text('தமிழ்'),
-                          ),
-                        ],
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedLanguage = newValue!;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 40),
-
             // Profile Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -173,38 +68,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Color(0xFF2D3748),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     // Driver Name
                     Text(
-                      widget.driverName,
+                      driverName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     // Phone Number
                     Text(
-                      widget.phoneNo,
+                      phoneNo,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
                     // Logout Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Navigate to Login screen and clear navigation stack
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
@@ -234,9 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-
             const Spacer(),
-
             // Footer
             Padding(
               padding: const EdgeInsets.only(bottom: 12, top: 8),

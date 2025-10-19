@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
+import '../utils/language_provider.dart';
 import 'profile_screen.dart';
 import 'about_screen.dart';
+import '../utils/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final String driverName;
@@ -25,10 +27,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> locations = ['Colombo', 'Kandy', 'Galle', 'Jaffna'];
   String? startLocation;
   String? endLocation;
-  String selectedLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final selectedLanguage = languageProvider.language;
+    final auth = Provider.of<AuthProvider>(context, listen: true);
+    final headerDriverName = auth.driver?.driverName ?? widget.driverName;
+    final headerBusNo = auth.driver?.busNo ?? widget.busNo;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A202C),
       body: SafeArea(
@@ -43,7 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () {
-                      SystemNavigator.pop();
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -58,71 +67,90 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      widget.driverName,
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      widget.busNo,
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4263EB),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedLanguage,
-                        dropdownColor: const Color(0xFF4263EB),
-                        icon: const Icon(
-                          Icons.arrow_drop_down,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              selectedLanguage = newValue;
-                            });
-                          }
-                        },
-                        items: ['English', 'සිංහල', 'தமிழ්']
-                            .map(
-                              (String value) => DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              headerDriverName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
                               ),
-                            )
-                            .toList(),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              headerBusNo,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4263EB),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedLanguage,
+                                dropdownColor: const Color(0xFF4263EB),
+                                icon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    languageProvider.setLanguage(newValue);
+                                  }
+                                },
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'en',
+                                    child: Text('EN'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'si',
+                                    child: Text('SI'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'ta',
+                                    child: Text('TA'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -142,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // Start Location Dropdown
                       DropdownButtonFormField<String>(
-                        value: startLocation,
+                        initialValue: startLocation,
                         decoration: InputDecoration(
                           labelText: AppLocalizations.get(
                             'start_location',
@@ -173,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 16),
                       // End Location Dropdown
                       DropdownButtonFormField<String>(
-                        value: endLocation,
+                        initialValue: endLocation,
                         decoration: InputDecoration(
                           labelText: AppLocalizations.get(
                             'end_location',
@@ -210,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               (startLocation != null && endLocation != null)
                               ? () {
                                   // Start journey logic here
-                                  print(
+                                  debugPrint(
                                     'Journey: $startLocation to $endLocation',
                                   );
                                 }
