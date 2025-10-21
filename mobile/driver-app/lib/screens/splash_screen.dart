@@ -16,6 +16,51 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnimation;
 
   @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    // --- FIX 1: Play animation forward once, then navigate when it's complete ---
+    _controller.forward().whenComplete(() {
+      // The 'whenComplete' callback ensures navigation happens right after the animation.
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          // Use a FadeTransition for a smoother screen change
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LoginScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A202C),
@@ -35,65 +80,59 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        padding: const EdgeInsets.all(30),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFF4263EB),
-                              const Color(0xFF7C3AED),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF4263EB).withOpacity(0.5),
-                              blurRadius: 30,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Icon(
-                              Icons.directions_bus,
-                              size: 80,
-                              color: Colors.white,
-                            ),
-                            Positioned(
-                              left: 18,
-                              bottom: 10,
-                              child: _RotatingWheel(animation: _controller),
-                            ),
-                            Positioned(
-                              right: 18,
-                              bottom: 10,
-                              child: _RotatingWheel(animation: _controller),
-                            ),
-                          ],
-                        ),
+              // --- Bus Icon Animation ---
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF4263EB), Color(0xFF7C3AED)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4263EB).withOpacity(0.5),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
-                  );
-                },
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(
+                          Icons.directions_bus,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                        Positioned(
+                          left: 18,
+                          bottom: 10,
+                          child: _RotatingWheel(animation: _controller),
+                        ),
+                        Positioned(
+                          right: 18,
+                          bottom: 10,
+                          child: _RotatingWheel(animation: _controller),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 40),
-              AnimatedBuilder(
-                animation: _fadeAnimation,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: const Text(
+              // --- FIX 2: Simplified the text and loader animations ---
+              // All these widgets can fade in using the same animation controller.
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: const [
+                    Text(
                       'BusTrackLK',
                       style: TextStyle(
                         color: Colors.white,
@@ -102,16 +141,8 @@ class _SplashScreenState extends State<SplashScreen>
                         letterSpacing: 2,
                       ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              AnimatedBuilder(
-                animation: _fadeAnimation,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: const Text(
+                    SizedBox(height: 10),
+                    Text(
                       'Driver App',
                       style: TextStyle(
                         color: Colors.white70,
@@ -120,65 +151,25 @@ class _SplashScreenState extends State<SplashScreen>
                         letterSpacing: 1,
                       ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 60),
-              AnimatedBuilder(
-                animation: _fadeAnimation,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SizedBox(
+                    SizedBox(height: 60),
+                    SizedBox(
                       width: 50,
                       height: 50,
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          const Color(0xFF4263EB),
+                          Color(0xFF4263EB),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-    _controller.repeat();
-    Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 
@@ -188,12 +179,13 @@ class _RotatingWheel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // We need an AnimatedBuilder here to rebuild the Transform.rotate on every tick.
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         return Transform.rotate(
-          angle: animation.value * 6.28, // 2 * pi
-          child: Icon(Icons.circle, size: 18, color: Colors.black),
+          angle: animation.value * 2 * 3.14159, // 2 * pi for a full circle
+          child: const Icon(Icons.circle, size: 18, color: Colors.black54),
         );
       },
     );

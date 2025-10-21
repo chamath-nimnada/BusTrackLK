@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class UserModel {
   final String phoneNumber;
   final String password;
@@ -39,4 +41,26 @@ class UserModel {
   String toString() =>
       'UserModel(phoneNumber: '
       '$phoneNumber, password: ****)';
+}
+
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false,
+            );
+          },
+          child: const Text('Go to Login'),
+        ),
+      ),
+    );
+  }
 }

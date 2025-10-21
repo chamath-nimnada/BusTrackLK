@@ -1,137 +1,176 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/app_localizations.dart';
-import '../utils/language_provider.dart';
-import 'Login_screen.dart';
+import '../models/driver_info.dart';
 import '../utils/auth_provider.dart';
+import 'login_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
-  final String driverName;
-  final String busNo;
-  final String phoneNo;
+class ProfileScreen extends StatelessWidget {
+  // --- FIX 1: REMOVED ALL CONSTRUCTOR ARGUMENTS ---
+  // This screen is now self-sufficient and gets its data from AuthProvider.
+  const ProfileScreen({Key? key}) : super(key: key);
 
-  const ProfileScreen({
-    Key? key,
-    this.driverName = "Driver Name",
-    this.busNo = "ABC-4768",
-    this.phoneNo = "+94 78 123 1234",
-  }) : super(key: key);
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  // Remove local selectedLanguage; use Provider instead
+  // --- FIX 2: IMPLEMENTED A CORRECT LOGOUT METHOD ---
+  Future<void> _logout(BuildContext context) async {
+    // This correctly calls the provider to clear the session before navigating.
+    await context.read<AuthProvider>().logout();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final selectedLanguage = Provider.of<LanguageProvider>(context).language;
-    final auth = Provider.of<AuthProvider>(context, listen: true);
-    final driverName = auth.driver?.driverName ?? widget.driverName;
-    final phoneNo = auth.driver?.phoneNo ?? widget.phoneNo;
     return Scaffold(
       backgroundColor: const Color(0xFF1A202C),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            // Profile Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2D3748),
-                  borderRadius: BorderRadius.circular(16),
+      // --- FIX 3: ADDED A PROPER APPBAR FOR BETTER NAVIGATION ---
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2D3748),
+        elevation: 0,
+        title: const Text('My Profile'),
+        actions: [
+          // Placeholder for future "Edit Profile" functionality
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Edit profile feature coming soon!'),
                 ),
-                child: Column(
-                  children: [
-                    // Profile Avatar
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 60,
-                        color: Color(0xFF2D3748),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Driver Name
-                    Text(
-                      driverName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Phone Number
-                    Text(
-                      phoneNo,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Logout Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          AppLocalizations.get('logout', selectedLanguage),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, child) {
+          // --- FIX 4: GRACEFULLY HANDLE LOADING/ERROR STATE ---
+          // If the driver data isn't available, show a loading indicator.
+          if (auth.driver == null) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            );
+          }
+          // Once we have the data, we can use it.
+          final driver = auth.driver!;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
             ),
-            const Spacer(),
-            // Footer
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12, top: 8),
-              child: Text(
-                AppLocalizations.get('copyright', selectedLanguage),
-                style: const TextStyle(color: Colors.white54, fontSize: 10),
-              ),
+            child: Column(
+              children: [
+                _buildProfileHeader(driver),
+                const SizedBox(height: 30),
+                _buildProfileDetailsCard(context, driver),
+                const SizedBox(height: 30),
+                _buildLogoutButton(context),
+              ],
             ),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Builds the top section with the profile picture and name.
+  Widget _buildProfileHeader(DriverInfo driver) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: const Color(0xFF4263EB),
+          child: Text(
+            driver.driverName.isNotEmpty
+                ? driver.driverName[0].toUpperCase()
+                : 'D',
+            style: const TextStyle(fontSize: 50, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          driver.driverName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          driver.email.isNotEmpty ? driver.email : 'No email provided',
+          style: const TextStyle(color: Colors.white70, fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a card containing the driver's detailed information.
+  Widget _buildProfileDetailsCard(BuildContext context, DriverInfo driver) {
+    return Card(
+      color: const Color(0xFF2D3748),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          _buildDetailRow(
+            icon: Icons.phone_outlined,
+            title: 'Phone Number',
+            value: driver.phoneNo,
+          ),
+          const Divider(color: Colors.white12, height: 1),
+          _buildDetailRow(
+            icon: Icons.directions_bus_outlined,
+            title: 'Bus Number',
+            value: driver.busNo,
+          ),
+          const Divider(color: Colors.white12, height: 1),
+          _buildDetailRow(
+            icon: Icons.route_outlined,
+            title: 'Route Number',
+            value: driver.routeNo,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper widget for a single row in the details card.
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white70),
+      title: Text(title, style: const TextStyle(color: Colors.white70)),
+      subtitle: Text(
+        value,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+    );
+  }
+
+  /// Builds the logout button.
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.logout),
+        label: const Text('Logout'),
+        onPressed: () => _logout(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red.shade400,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

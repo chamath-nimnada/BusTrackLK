@@ -58,8 +58,8 @@ class RegistrationSuccessScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white30),
                     ),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Text(
                           'English',
                           style: TextStyle(color: Colors.white, fontSize: 12),

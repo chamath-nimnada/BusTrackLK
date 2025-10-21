@@ -1,6 +1,25 @@
+/// A simple model to represent a supported language.
+class Language {
+  final String code;
+  final String name;
+
+  const Language(this.code, this.name);
+}
+
+/// Central class for handling all app translations.
 class AppLocalizations {
-  static Map<String, Map<String, String>> translations = {
-    'English': {
+  /// --- FIX 1: ADDED A LIST OF SUPPORTED LANGUAGES ---
+  /// This makes it easy to build UI elements like dropdowns.
+  static const List<Language> supportedLanguages = [
+    Language('en', 'English'),
+    Language('si', 'සිංහල'), // Sinhala
+    Language('ta', 'தமிழ்'), // Tamil
+  ];
+
+  /// --- FIX 2: CHANGED MAP KEYS TO LANGUAGE CODES ('en', 'si', 'ta') ---
+  /// This is the industry standard and fixes the bug where the language would not switch.
+  static final Map<String, Map<String, String>> _translations = {
+    'en': {
       'app_name': 'BusTrackLK',
       'driver_name': 'Driver Name',
       'start_location': 'Start Location',
@@ -30,7 +49,7 @@ class AppLocalizations {
       'about_description':
           'Tired of the endless waiting and uncertainty of bus travel? We are too.\n\nAs daily commuters and software engineering students, we\'re building BusTrackLK. Our mission is to put real time bus tracking and schedules to easy seat booking, making travel more simple and predictable for our entire community.',
     },
-    'Sinhala': {
+    'si': {
       'app_name': 'බස්ට්‍රැක්LK',
       'driver_name': 'රියදුරු නම',
       'start_location': 'ආරම්භක ස්ථානය',
@@ -60,7 +79,7 @@ class AppLocalizations {
       'about_description':
           'බස් ගමනේ නිමක් නැති බලාපොරොත්තුව සහ අවිනිශ්චිතතාවයෙන් මහන්සි වී ද? අපිත් එහෙමයි.\n\nදෛනික ගමනාගමනකරුවන් සහ මෘදුකාංග ඉංජිනේරු සිසුන් ලෙස, අපි BusTrackLK නිර්මාණය කරමින් සිටිමු. අපගේ මෙහෙවර වන්නේ තත්‍ය කාලීන බස් ලුහුබැඳීම සහ කාලසටහන් පහසු ආසන වෙන්කිරීම දක්වා ගෙන ගොස්, අපගේ සම්පූර්ණ ප්‍රජාව සඳහා ගමන වඩාත් සරල හා පුරෝකථනය කළ හැකි බවට පත් කිරීමයි.',
     },
-    'Tamil': {
+    'ta': {
       'app_name': 'பஸ்ட்ராக்LK',
       'driver_name': 'ஓட்டுநர் பெயர்',
       'start_location': 'தொடக்க இடம்',
@@ -93,7 +112,11 @@ class AppLocalizations {
     },
   };
 
-  static String get(String key, String language) {
-    return translations[language]?[key] ?? translations['English']?[key] ?? key;
+  /// Gets the translated string for a given key and language code.
+  /// Falls back to English if the translation is not found.
+  static String get(String key, String languageCode) {
+    return _translations[languageCode]?[key] ??
+        _translations['en']?[key] ??
+        key;
   }
 }

@@ -1,29 +1,48 @@
+/// Represents the data model for a driver.
+/// This class includes methods for converting to/from JSON for API communication
+/// and local storage.
 class DriverInfo {
+  final String id; // Unique ID from the database
   final String driverName;
-  final String busNo;
+  final String email;
   final String phoneNo;
-  final String? token;
+  final String busNo;
+  final String routeNo;
 
   const DriverInfo({
+    required this.id,
     required this.driverName,
-    required this.busNo,
+    required this.email,
     required this.phoneNo,
-    this.token,
+    required this.busNo,
+    required this.routeNo,
   });
 
+  /// --- FIX: Updated fromJson factory ---
+  /// Creates a DriverInfo object from a JSON map.
+  /// This is more robust and handles various possible keys from your API.
   factory DriverInfo.fromJson(Map<String, dynamic> json) {
     return DriverInfo(
-      driverName: (json['driverName'] ?? json['name'] ?? '').toString(),
-      busNo: (json['busNo'] ?? json['bus_number'] ?? '').toString(),
-      phoneNo: (json['phone'] ?? json['phoneNo'] ?? '').toString(),
-      token: json['token']?.toString(),
+      id: json['_id'] ?? json['id'] ?? '', // Common keys for database IDs
+      driverName: json['driverName'] ?? json['fullName'] ?? '',
+      email: json['email'] ?? '',
+      phoneNo: json['phoneNo'] ?? json['phone'] ?? '',
+      busNo: json['busNo'] ?? '',
+      routeNo: json['routeNo'] ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'driverName': driverName,
-    'busNo': busNo,
-    'phone': phoneNo,
-    if (token != null) 'token': token,
-  };
+  /// --- FIX: Updated toJson method ---
+  /// Converts the DriverInfo object into a JSON map.
+  /// This is essential for saving the user's session to the device.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'driverName': driverName,
+      'email': email,
+      'phoneNo': phoneNo,
+      'busNo': busNo,
+      'routeNo': routeNo,
+    };
+  }
 }

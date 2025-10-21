@@ -115,7 +115,7 @@ class _DateTimeBadgesState extends State<DateTimeBadges> {
     final dateStr = dateFmt.format(_now);
     final timeStr = timeFmt.format(_now);
 
-    final badge = (String text) => Container(
+    Container badge(String text) => Container(
       padding: widget.padding,
       decoration: BoxDecoration(
         color: widget.backgroundColor,
