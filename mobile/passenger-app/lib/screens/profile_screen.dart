@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+// 1. Import the necessary services and screens
+import 'package:passenger_app/services/auth_service.dart';
+import 'package:passenger_app/screens/home_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool isPremium;
@@ -6,7 +9,7 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key, required this.isPremium}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) { // The 'context' is defined here
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF111827),
       appBar: AppBar(
@@ -48,9 +51,9 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.white70, fontSize: 16),
               ),
               SizedBox(height: 30),
-              _buildLogoutButton(),
+              // 2. Pass context to the logout button
+              _buildLogoutButton(context),
               Spacer(),
-              // We now pass 'context' to the helper method
               if (!isPremium) _buildUpgradeCard(context),
               SizedBox(height: 20),
             ],
@@ -94,11 +97,24 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton() {
+  // 3. Update the Logout Button to accept context and handle logout
+  Widget _buildLogoutButton(BuildContext context) {
+    final AuthService authService = AuthService();
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () async {
+          // Call the logout method from the service
+          await authService.logout();
+
+          // Navigate to the home screen, removing all previous screens
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+                (Route<dynamic> route) => false,
+          );
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFFEF4444),
           padding: EdgeInsets.symmetric(vertical: 16),
@@ -109,7 +125,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // The method now accepts the context it needs to perform navigation
   Widget _buildUpgradeCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(20),
@@ -137,7 +152,6 @@ class ProfileScreen extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // Now this 'context' is valid and can be used
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => ProfileScreen(isPremium: true)),

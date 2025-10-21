@@ -1,6 +1,5 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
 
 //screens
 import 'package:passenger_app/screens/about_screen.dart';
@@ -8,6 +7,8 @@ import 'package:passenger_app/screens/auth_screen.dart';
 import 'package:passenger_app/screens/lost_item_screen.dart';
 import 'package:passenger_app/screens/bus_booking_screen.dart';
 import 'package:passenger_app/screens/bus_schedule_screen.dart';
+import 'package:passenger_app/screens/profile_screen.dart';
+import 'package:passenger_app/services/auth_service.dart'; // 1. Import the AuthService
 
 import 'bus_tracking_screen.dart';
 
@@ -17,6 +18,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // 2. Add state management variables
+  final AuthService _authService = AuthService();
+  bool _isLoggedIn = false;
+
   String _selectedLanguage = 'English';
   late String _currentDate;
   late String _currentTime;
@@ -25,6 +30,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _updateDateTime();
+    _checkLoginStatus(); // 3. Check login status when the screen loads
+  }
+
+  // 4. New function to check for a saved token
+  Future<void> _checkLoginStatus() async {
+    final loggedIn = await _authService.isLoggedIn();
+    if (mounted) { // Check if the widget is still in the tree
+      setState(() {
+        _isLoggedIn = loggedIn;
+      });
+    }
   }
 
   void _updateDateTime() {
@@ -37,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF111827), // Dark background
+      backgroundColor: Color(0xFF111827),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -69,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Color(0xFF374151), // Dark gray
+                          color: Color(0xFF374151),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -127,49 +143,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
                   children: [
-                    // CHANGE: Pass 'context' as the first argument to each call
+                    _buildFeatureCard(context, 'Bus Tracking', 'Real-time location', Icons.directions_bus, Color(0xFF3B82F6)),
+                    _buildFeatureCard(context, 'Bus Schedule', 'Timetables & Routes', Icons.schedule, Color(0xFF10B981)),
+                    _buildFeatureCard(context, 'Ticket Booking', 'Book your seats', Icons.airplane_ticket, Color(0xFF6D28D9)),
+                    _buildFeatureCard(context, 'Packages', 'Track your items', Icons.luggage, Color(0xFFF59E0B)),
+                    // 5. This card is now dynamic
                     _buildFeatureCard(
-                      context, // <-- Add this
-                      'Bus Tracking',
-                      'Real-time location',
-                      Icons.directions_bus,
-                      Color(0xFF3B82F6), // Blue
+                      context,
+                      _isLoggedIn ? 'Profile' : 'Login / Register',
+                      _isLoggedIn ? 'Your account details' : 'Access your account',
+                      _isLoggedIn ? Icons.person : Icons.login,
+                      Color(0xFF8B5CF6),
                     ),
-                    _buildFeatureCard(
-                      context, // <-- Add this
-                      'Bus Schedule',
-                      'Timetables & Routes',
-                      Icons.schedule,
-                      Color(0xFF10B981), // Green
-                    ),
-                    _buildFeatureCard(
-                      context, // <-- Add this
-                      'Ticket Booking',
-                      'Book your seats',
-                      Icons.airplane_ticket,
-                      Color(0xFF6D28D9), // Purple
-                    ),
-                    _buildFeatureCard(
-                      context, // <-- Add this
-                      'Packages',
-                      'Track your items',
-                      Icons.luggage,
-                      Color(0xFFF59E0B), // Orange
-                    ),
-                    _buildFeatureCard(
-                      context, // <-- Add this
-                      'Profile',
-                      'Your account details',
-                      Icons.person,
-                      Color(0xFF8B5CF6), // Dark Purple
-                    ),
-                    _buildFeatureCard(
-                      context, // <-- Add this
-                      'About',
-                      'Learn more about\nus',
-                      Icons.info,
-                      Color(0xFFEF4444), // Red
-                    ),
+                    _buildFeatureCard(context, 'About', 'Learn more about\nus', Icons.info, Color(0xFFEF4444)),
                   ],
                 ),
               ),
@@ -203,37 +189,28 @@ class _HomeScreenState extends State<HomeScreen> {
       elevation: 5,
       child: InkWell(
         onTap: () {
-          if (title == 'About') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AboutScreen()),
-            );
-          } else if (title == 'Profile') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AuthScreen()),
-            );
+          // 6. This is the updated navigation logic
+          if (title == 'Profile' || title == 'Login / Register') {
+            if (_isLoggedIn) {
+              // If logged in, go to profile.
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen(isPremium: false)))
+                  .then((_) => _checkLoginStatus()); // Re-check login status when returning
+            } else {
+              // If not logged in, go to the Auth screen
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AuthScreen()))
+                  .then((_) => _checkLoginStatus()); // Re-check login status when returning
+            }
+          } else if (title == 'About') {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => AboutScreen()));
           } else if (title == 'Packages') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => LostItemScreen()),
-            );
-          } else if (title == 'Bus Schedule') { // <-- ADD THIS
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => BusScheduleScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (context) => LostItemScreen()));
+          } else if (title == 'Bus Schedule') {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => BusScheduleScreen()));
           } else if (title == 'Ticket Booking') {
-            Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => BusBookingScreen()));
-          } else if (title == 'Bus Tracking') { // <-- ADD THIS
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => BusTrackingScreen()),
-            );
-          }else {
-            // Handle taps for other features
+            Navigator.push(context, MaterialPageRoute(builder: (context) => BusBookingScreen()));
+          } else if (title == 'Bus Tracking') {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => BusTrackingScreen()));
+          } else {
             print('$title tapped!');
           }
         },
