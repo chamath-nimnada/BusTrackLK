@@ -1,7 +1,10 @@
 package com.example.demo.auth.service;
 
+import com.example.demo.auth.dto.LoginRequestDto;
+import com.example.demo.auth.dto.LoginResponseDto;
 import com.example.demo.auth.dto.RegisterRequestDto;
 import com.example.demo.auth.model.User;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -40,5 +43,29 @@ public class AuthService {
         dbFirestore.collection("users").document(userId).set(user).get();
 
         return userId;
+    }
+
+    public LoginResponseDto loginUser(LoginRequestDto loginRequest) throws FirebaseAuthException, ExecutionException, InterruptedException {
+        // Step 1: Get the UserRecord from Firebase Auth to verify the user exists
+        UserRecord userRecord = firebaseAuth.getUserByEmail(loginRequest.getEmail());
+        String userId = userRecord.getUid();
+
+        // Step 2: Generate a custom token for the user
+        String customToken = firebaseAuth.createCustomToken(userId);
+
+        // Step 3: Get user details from Firestore
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DocumentSnapshot userDoc = dbFirestore.collection("users").document(userId).get().get();
+
+        User user = null;
+        if (userDoc.exists()) {
+            user = userDoc.toObject(User.class);
+        } else {
+            // This case would be unusual but is good to handle
+            throw new RuntimeException("User data not found in Firestore.");
+        }
+
+        // Step 4: Return the token and user details
+        return new LoginResponseDto(customToken, user);
     }
 }
