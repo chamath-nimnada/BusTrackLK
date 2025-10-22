@@ -1,159 +1,88 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import '../widgets/date_time_badges.dart';
+import 'home_screen.dart';
 
+/// This screen is shown after a user successfully registers their account.
+/// It provides clear visual feedback and a single action to proceed.
 class RegistrationSuccessScreen extends StatelessWidget {
   const RegistrationSuccessScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2D3748),
-      body: SafeArea(
+      appBar: AppBar(
+        // The AppBar provides the back button and title, as seen in your design.
+        title: const Text('BusTrackLK'),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
         child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center, // Center content vertically
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch, // Stretch button to full width
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      // Navigate back to login
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'BusTrackLK',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  const DateTimeBadges(
-                    axis: Axis.vertical,
-                    textStyle: TextStyle(color: Colors.white70, fontSize: 11),
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    borderRadius: 12,
-                    spacing: 4,
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white30),
-                    ),
-                    child: const Row(
-                      children: [
-                        Text(
-                          'English',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ],
-                    ),
+            const Spacer(), // Pushes content to the center
+            // "Registration Success" Text
+            const Text(
+              'Registration Success',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // Green Checkmark Icon
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF34D399), // A vibrant green
+                border: Border.all(
+                  color: const Color(0xFFFBBF24),
+                  width: 6,
+                ), // The yellow border
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 5,
                   ),
                 ],
               ),
+              child: const Icon(Icons.check, color: Colors.white, size: 70),
             ),
 
-            const Spacer(),
-
-            // Success Message and Icon
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Registration Success',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                // Success Icon with circular background
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF10B981), // Green
-                        Color(0xFF34D399),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.4),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.check, color: Colors.white, size: 70),
-                ),
-              ],
-            ),
-
-            const Spacer(),
-
+            const Spacer(), // Pushes the button to the bottom
             // OK Button
-            Padding(
-              padding: const EdgeInsets.all(40),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate back to Login screen
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'OK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
+            ElevatedButton(
+              onPressed: () {
+                // When "OK" is pressed, navigate to the HomeScreen.
+                // pushAndRemoveUntil clears the navigation history, so the user
+                // can't go back to the login or success screen.
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF34D399), // Green button color
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              child: const Text('OK'),
             ),
           ],
         ),

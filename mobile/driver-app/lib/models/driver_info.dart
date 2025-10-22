@@ -1,46 +1,41 @@
-/// Represents the data model for a driver.
-/// This class includes methods for converting to/from JSON for API communication
-/// and local storage.
 class DriverInfo {
-  final String id; // Unique ID from the database
-  final String driverName;
-  final String email;
+  final String id;
+  final String driverName; // This is the "User Name" (full name)
+  final String username; // This is the new field for login
   final String phoneNo;
+  final String nic;
   final String busNo;
   final String routeNo;
 
   const DriverInfo({
     required this.id,
     required this.driverName,
-    required this.email,
+    required this.username, // Added
     required this.phoneNo,
+    required this.nic,
     required this.busNo,
     required this.routeNo,
   });
 
-  /// --- FIX: Updated fromJson factory ---
-  /// Creates a DriverInfo object from a JSON map.
-  /// This is more robust and handles various possible keys from your API.
   factory DriverInfo.fromJson(Map<String, dynamic> json) {
     return DriverInfo(
-      id: json['_id'] ?? json['id'] ?? '', // Common keys for database IDs
+      id: json['_id'] ?? json['id'] ?? '',
       driverName: json['driverName'] ?? json['fullName'] ?? '',
-      email: json['email'] ?? '',
+      username: json['username'] ?? '', // Added
       phoneNo: json['phoneNo'] ?? json['phone'] ?? '',
+      nic: json['nic'] ?? '',
       busNo: json['busNo'] ?? '',
       routeNo: json['routeNo'] ?? '',
     );
   }
 
-  /// --- FIX: Updated toJson method ---
-  /// Converts the DriverInfo object into a JSON map.
-  /// This is essential for saving the user's session to the device.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'driverName': driverName,
-      'email': email,
+      'username': username, // Added
       'phoneNo': phoneNo,
+      'nic': nic,
       'busNo': busNo,
       'routeNo': routeNo,
     };

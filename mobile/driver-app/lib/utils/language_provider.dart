@@ -1,40 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Manages the app's currently selected language and persists the choice.
+/// This class manages the app's currently selected language.
+/// It uses the Provider package to notify the UI when the language changes,
+/// and it uses SharedPreferences to save the user's choice permanently.
 class LanguageProvider extends ChangeNotifier {
+  // A key to find the saved language preference on the device.
   static const String _languagePrefKey = 'selectedLanguageCode';
-  String _localeCode = 'en'; // Default to English
+  String _localeCode = 'en'; // Default to English.
 
+  /// Public getter to safely access the current language code.
   String get localeCode => _localeCode;
 
+  /// The constructor is called when the provider is first created.
+  /// It immediately tries to load the user's previously saved language.
   LanguageProvider() {
     _loadLanguage();
   }
 
-  /// --- FIX 1: ADDED A METHOD TO LOAD SAVED LANGUAGE ---
-  /// Loads the user's preferred language from the device storage.
+  /// Loads the language code from the device's local storage.
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    // Get the saved code, or if it's null, use the default 'en'.
+    // Get the saved code. If it's null (first time running), default to 'en'.
     _localeCode = prefs.getString(_languagePrefKey) ?? 'en';
-    notifyListeners();
+    notifyListeners(); // Notify widgets that the initial language has been loaded.
   }
 
-  /// --- FIX 2: ADDED A METHOD TO SAVE LANGUAGE PREFERENCE ---
-  /// Saves the user's selected language code to the device storage.
+  /// Sets the new language and saves it.
+  void setLanguage(String newLocaleCode) {
+    if (_localeCode == newLocaleCode) return; // No change needed.
+
+    _localeCode = newLocaleCode;
+    notifyListeners(); // Notify the UI to rebuild with the new language.
+    _saveLanguage(); // Save the new choice.
+  }
+
+  /// Saves the current language code to the device's local storage.
   Future<void> _saveLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_languagePrefKey, _localeCode);
-  }
-
-  /// --- FIX 3: UPDATED METHOD TO USE LANGUAGE CODES ---
-  /// Sets the new language, notifies listeners, and saves the preference.
-  void setLanguage(String newLocaleCode) {
-    if (_localeCode == newLocaleCode) return; // No change needed
-
-    _localeCode = newLocaleCode;
-    notifyListeners();
-    _saveLanguage();
   }
 }

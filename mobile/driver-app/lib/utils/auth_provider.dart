@@ -2,170 +2,115 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/driver_info.dart';
 import '../services/auth_service.dart';
 
+/// This is the main "brain" for authentication.
+/// It manages the user's login state, handles API calls via AuthService,
+/// and notifies the UI of any changes (like login success or loading state).
 class AuthProvider extends ChangeNotifier {
   DriverInfo? _driver;
   String? _token;
   bool _isLoading = false;
   String? _error;
 
+  /// Public getters to access the state from the UI safely.
   DriverInfo? get driver => _driver;
-  String? get token => _token;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  /// A computed property to easily check if the user is logged in.
   bool get isLoggedIn => _token != null && _driver != null;
 
-  /// --- FIX 1: ADDED FULL REGISTRATION FLOW ---
-  /// Handles the registration logic.
+  /// Handles the entire registration process.
   Future<bool> register(Map<String, dynamic> registrationData) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    notifyListeners(); // Tell the UI we are now loading.
 
     try {
       final response = await AuthService.register(registrationData);
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
-        // HTTP 201 Created for success
-        // Many APIs log the user in automatically after registration.
-        // If your API does, it will return driver data and a token here.
-        // If not, you can just return true and prompt them to log in.
-
-        // This example assumes auto-login after register.
+        // 201 Created = Success
         _driver = DriverInfo.fromJson(responseData['driver']);
         _token = responseData['token'];
-
-        // Save session
         await _saveSession();
-
-        _isLoading = false;
-        notifyListeners();
         return true;
       } else {
-        // Use the error message from the server
         _error = responseData['message'] ?? 'Registration failed.';
       }
     } catch (e) {
-      _error = 'An unexpected error occurred during registration: $e';
+      _error = 'An unexpected error occurred during registration.';
+    } finally {
+      _isLoading = false;
+      notifyListeners(); // Tell the UI we are done loading.
     }
-
-    _isLoading = false;
-    notifyListeners();
     return false;
   }
 
-  /// --- IMPROVED LOGIN FLOW ---
-  /// Handles the login logic and saves the user's session.
-  Future<bool> login(String phone, String password) async {
+  /// Handles the entire login process using username and password.
+  Future<bool> login(String username, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await AuthService.login(phone, password);
+      // This now correctly calls the AuthService with a 'username'.
+      final response = await AuthService.login(username, password);
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // --- FIX 2: IMPLEMENTED TOKEN-BASED AUTHENTICATION ---
-        // Expecting the API to return the driver's info and an auth token.
+        // 200 OK = Success
         _driver = DriverInfo.fromJson(responseData['driver']);
         _token = responseData['token'];
-
-        // Save session
         await _saveSession();
-
-        _isLoading = false;
-        notifyListeners();
         return true;
       } else {
-        // --- FIX 3: IMPROVED ERROR HANDLING ---
-        // Use the specific error message from the server if available.
-        _error = responseData['message'] ?? 'Invalid phone number or password.';
+        _error = responseData['message'] ?? 'Invalid username or password.';
       }
     } catch (e) {
-      _error = 'An unexpected error occurred: $e';
+      _error = 'An unexpected error occurred during login.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
     return false;
   }
 
-  /// --- FIX 4: ADDED AUTO-LOGIN ON APP STARTUP ---
-  /// Checks for a saved session token and attempts to log the user in automatically.
+  /// Checks for a saved session when the app starts.
   Future<bool> tryAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey('userData')) {
-      return false;
+      return false; // No saved session.
     }
 
     final extractedUserData =
         jsonDecode(prefs.getString('userData')!) as Map<String, dynamic>;
-
-    // Here you would typically also check if the token is expired.
-    // For simplicity, we are just reloading the data.
     _token = extractedUserData['token'];
     _driver = DriverInfo.fromJson(extractedUserData['driver']);
 
     notifyListeners();
-
-    // You might want to add a call here to verify the token with the server
-    // to ensure it's still valid, but for now, this restores the state.
-    return true;
+    return true; // Successfully restored session.
   }
 
-  /// --- FIX 5: ADDED LOGOUT AND SESSION CLEARING ---
+  /// Logs the user out and clears their data from the device.
   Future<void> logout() async {
     _driver = null;
     _token = null;
-    _error = null;
     notifyListeners();
 
-    // Clear saved session data from the device
     final prefs = await SharedPreferences.getInstance();
-    prefs.remove('userData');
+    await prefs.remove('userData');
   }
 
-  /// Saves the current user's token and profile to the device's local storage.
+  /// Saves the current driver's data and token to the device's local storage.
   Future<void> _saveSession() async {
     if (_token == null || _driver == null) return;
+
     final prefs = await SharedPreferences.getInstance();
-    final userData = jsonEncode({
-      'token': _token,
-      'driver': _driver!
-          .toJson(), // Assuming you have a toJson() method in DriverInfo
-    });
+    final userData = jsonEncode({'token': _token, 'driver': _driver!.toJson()});
     await prefs.setString('userData', userData);
-  }
-
-  // Add this method inside your AuthProvider class in auth_provider.dart
-
-  Future<bool> forgotPassword(String phoneOrEmail) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final response = await AuthService.forgotPassword(phoneOrEmail);
-      final responseData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        _isLoading = false;
-        notifyListeners();
-        return true; // Request was successful
-      } else {
-        _error = responseData['message'] ?? 'Password reset request failed.';
-      }
-    } catch (e) {
-      _error = 'An unexpected error occurred: $e';
-    }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
   }
 }

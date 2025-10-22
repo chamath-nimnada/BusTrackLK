@@ -1,64 +1,66 @@
-import 'package:flutter/material.dart';
-import '../utils/validators.dart';
-import 'custom_text_field.dart';
-import 'custom_button.dart';
-
-class LoginForm extends StatefulWidget {
-  final void Function(String phone, String password)? onLogin;
-  final bool isLoading;
-
-  const LoginForm({Key? key, this.onLogin, this.isLoading = false})
-    : super(key: key);
-
-  @override
-  State<LoginForm> createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<LoginForm> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      widget.onLogin?.call(_phoneController.text, _passwordController.text);
+class Validators {
+  static String? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your user name.';
     }
+    if (value.length < 3) {
+      return 'User name must be at least 3 characters long.';
+    }
+    return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          CustomTextField(
-            controller: _phoneController,
-            hintText: 'Phone Number',
-            keyboardType: TextInputType.phone,
-            validator: Validators.validatePhone,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: _passwordController,
-            hintText: 'Password',
-            obscureText: true,
-            validator: Validators.validatePassword,
-          ),
-          const SizedBox(height: 24),
-          CustomButton(
-            text: 'Login',
-            onPressed: _submit,
-            isLoading: widget.isLoading,
-          ),
-        ],
-      ),
-    );
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number.';
+    }
+    final phoneRegExp = RegExp(r'^0\d{9}$');
+    if (!phoneRegExp.hasMatch(value)) {
+      return 'Please enter a valid 10-digit phone number.';
+    }
+    return null;
+  }
+
+  static String? validateNic(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your NIC number.';
+    }
+    final nicRegExp = RegExp(r'^([0-9]{9}[vVxX]|[0-9]{12})$');
+    if (!nicRegExp.hasMatch(value)) {
+      return 'Please enter a valid NIC number.';
+    }
+    return null;
+  }
+
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password.';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long.';
+    }
+    return null;
+  }
+
+  static String? validateRequired(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is required.';
+    }
+    return null;
+  }
+
+  // --- THIS IS THE MISSING FUNCTION THAT IS CAUSING THE ERROR ---
+  // By adding this, the errors in your other files will be fixed.
+  static String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a username.';
+    }
+    if (value.length < 4) {
+      return 'Username must be at least 4 characters long.';
+    }
+    final usernameRegExp = RegExp(r'^[a-zA-Z0-9_]+$');
+    if (!usernameRegExp.hasMatch(value)) {
+      return 'Username can only contain letters, numbers, and underscores.';
+    }
+    return null;
   }
 }

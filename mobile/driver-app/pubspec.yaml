@@ -9,10 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.1.0              # For API calls
-  provider: ^6.1.0          # State management
-  shared_preferences: ^2.2.0 # Local storage
-  intl: ^0.18.0             # Date formatting
+  http: ^1.5.0              # For API calls
+  provider: ^6.1.5+1          # State management
+  shared_preferences: ^2.5.3 # Local storage
+  intl: ^0.20.2             # Date formatting
 
 dev_dependencies:
   flutter_test:

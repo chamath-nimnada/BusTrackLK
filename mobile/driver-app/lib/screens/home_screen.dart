@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/driver_info.dart';
+import '../utils/app_localizations.dart';
 import '../utils/auth_provider.dart';
-import 'login_screen.dart';
+import '../utils/language_provider.dart';
+import 'about_screen.dart';
 import 'profile_screen.dart';
-// Note: You might need to adjust the import for AboutScreen if you have it
-// import 'about_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  // --- FIX 1: REMOVED ALL CONSTRUCTOR ARGUMENTS ---
-  // The screen will now get all its data directly from the AuthProvider.
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
@@ -17,356 +15,440 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // --- Local state for the journey planner ---
+  // --- NEW: A state variable to track if a journey is active ---
+  bool _isJourneyActive = false;
+
   final List<String> _locations = [
     'Colombo',
     'Kandy',
     'Galle',
     'Jaffna',
     'Matara',
+    'Batticaloa',
   ];
   String? _startLocation;
   String? _endLocation;
-  bool _isJourneyActive = false;
 
-  // --- FIX 2: IMPLEMENTED CORRECT LOGOUT ---
-  Future<void> _logout() async {
-    // This function now correctly calls the provider to clear the session
-    // before navigating to the login screen.
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
+  void _swapLocations() {
+    if (_startLocation == null && _endLocation == null) return;
+    setState(() {
+      final temp = _startLocation;
+      _startLocation = _endLocation;
+      _endLocation = temp;
+    });
   }
 
+  // --- UPDATED: This function now changes the state ---
   void _startJourney() {
-    if (_startLocation != null && _endLocation != null) {
-      if (_startLocation == _endLocation) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Start and end locations cannot be the same.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-      setState(() {
-        _isJourneyActive = true;
-      });
-      // TODO: Add logic to start GPS tracking and notify the backend.
-      debugPrint('Starting journey from $_startLocation to $_endLocation...');
+    if (_startLocation == null || _endLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a start and end location.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
+    if (_startLocation == _endLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Start and end locations cannot be the same.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // TODO: Add backend logic to start GPS tracking.
+    debugPrint('Starting journey from $_startLocation to $_endLocation');
+
+    // This is the key change: update the state to show the new UI.
+    setState(() {
+      _isJourneyActive = true;
+    });
   }
 
-  void _endJourney() {
+  // --- NEW: A function to stop the journey and reset the UI ---
+  void _stopJourney() {
+    // TODO: Add backend logic to stop GPS tracking.
+    debugPrint('Journey stopped.');
+
+    // Reset the state to show the planner UI again.
     setState(() {
       _isJourneyActive = false;
-      _startLocation = null;
-      _endLocation = null;
+      // Optional: Clear the locations after stopping.
+      // _startLocation = null;
+      // _endLocation = null;
     });
-    // TODO: Add logic to stop GPS tracking and notify the backend.
-    debugPrint('Journey ended.');
   }
 
   @override
   Widget build(BuildContext context) {
-    // --- FIX 3: USE A CONSUMER FOR ROBUST STATE MANAGEMENT ---
-    // This ensures the UI rebuilds when the auth state changes and
-    // handles the loading state gracefully.
-    return Consumer<AuthProvider>(
-      builder: (context, auth, child) {
-        final driver = auth.driver;
+    final driver = context.watch<AuthProvider>().driver;
+    if (driver == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-        // --- Show a loading screen if driver data is not yet available ---
-        if (driver == null) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF1A202C),
-            body: Center(child: CircularProgressIndicator(color: Colors.white)),
-          );
-        }
-
-        // --- Main UI ---
-        return Scaffold(
-          backgroundColor: const Color(0xFF1A202C),
-          // --- FIX 4: ADDED AN APPBAR AND A DRAWER FOR NAVIGATION ---
-          // This is a more standard and user-friendly UI pattern.
-          appBar: AppBar(
-            title: Text('Welcome, ${driver.driverName.split(' ')[0]}'),
-            backgroundColor: const Color(0xFF2D3748),
-            elevation: 0,
-          ),
-          drawer: _buildDrawer(driver),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildStatusCard(driver),
-                const SizedBox(height: 24),
-                // --- FIX 5: DYNAMIC JOURNEY CARD ---
-                // The UI now changes depending on whether a journey is active.
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _isJourneyActive
-                      ? _buildJourneyInProgressCard()
-                      : _buildJourneyPlannerCard(),
-                ),
-                // You can add more widgets here like a map preview in the future
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Builds the side navigation drawer.
-  Widget _buildDrawer(DriverInfo driver) {
-    return Drawer(
-      child: Container(
-        color: const Color(0xFF2D3748),
-        child: ListView(
-          padding: EdgeInsets.zero,
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
           children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(
-                driver.driverName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+            _buildHeader(context, driver),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
+                child: Column(
+                  children: [
+                    // --- NEW: Use an AnimatedSwitcher for a smooth UI transition ---
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _isJourneyActive
+                          ? _buildJourneyInProgressCard() // Show this if journey is active
+                          : _buildJourneyPlannerCard(), // Show this if not
+                    ),
+                    const SizedBox(height: 24),
+                    _buildNavigationCards(context),
+                  ],
                 ),
               ),
-              accountEmail: Text(
-                driver.email.isNotEmpty ? driver.email : driver.phoneNo,
-              ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: const Color(0xFF4263EB),
-                child: Text(
-                  driver.driverName.isNotEmpty ? driver.driverName[0] : 'D',
-                  style: const TextStyle(fontSize: 40.0, color: Colors.white),
-                ),
-              ),
-              decoration: const BoxDecoration(color: Color(0xFF1A202C)),
             ),
-            ListTile(
-              leading: const Icon(Icons.person_outline, color: Colors.white70),
-              title: const Text(
-                'My Profile',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                // --- FIX 6: DON'T PASS DATA, LET PROFILE SCREEN FETCH IT ---
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline, color: Colors.white70),
-              title: const Text(
-                'About App',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                // Navigator.pop(context);
-                // Navigator.of(context).push(
-                //   MaterialPageRoute(builder: (context) => const AboutScreen()),
-                // );
-              },
-            ),
-            const Divider(color: Colors.white24),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.redAccent),
-              ),
-              onTap: _logout,
-            ),
+            _buildFooter(context),
           ],
         ),
       ),
     );
   }
 
-  /// Card showing the driver's current status.
-  Widget _buildStatusCard(DriverInfo driver) {
-    return Card(
-      color: const Color(0xFF2D3748),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            const Icon(Icons.directions_bus, color: Colors.white, size: 40),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  // --- BUILDER METHODS (Header, Footer, Nav Cards are the same) ---
+
+  Widget _buildHeader(BuildContext context, DriverInfo driver) {
+    final langProvider = context.watch<LanguageProvider>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'BusTrackLK',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'The All-in-One Bus Travel Companion',
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    driver.busNo,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Route: ${driver.routeNo}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                  _buildInfoBadge(driver.driverName),
+                  const SizedBox(width: 8),
+                  _buildInfoBadge(driver.busNo),
                 ],
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _isJourneyActive ? Colors.green : Colors.orange,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _isJourneyActive ? 'LIVE' : 'OFFLINE',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
+              _buildLanguageDropdown(langProvider),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF333F54),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildLanguageDropdown(LanguageProvider langProvider) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF333F54),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: langProvider.localeCode,
+          dropdownColor: const Color(0xFF333F54),
+          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          items: AppLocalizations.supportedLanguages
+              .map(
+                (lang) =>
+                    DropdownMenuItem(value: lang.code, child: Text(lang.name)),
+              )
+              .toList(),
+          onChanged: (String? newCode) {
+            if (newCode != null) langProvider.setLanguage(newCode);
+          },
         ),
       ),
     );
   }
 
-  /// Card for planning a new journey.
+  // --- This is the original card for planning a journey ---
   Widget _buildJourneyPlannerCard() {
-    return Card(
-      key: const ValueKey('planner'),
-      color: const Color(0xFF2D3748),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Start a New Journey',
-              style: TextStyle(
-                color: Colors.white,
+    return Container(
+      key: const ValueKey('planner'), // Key for the AnimatedSwitcher
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2D3748),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _buildLocationDropdown(
+            'Start Location',
+            _startLocation,
+            (val) => setState(() => _startLocation = val),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.swap_vert, color: Colors.white70),
+              onPressed: _swapLocations,
+            ),
+          ),
+          _buildLocationDropdown(
+            'End Location',
+            _endLocation,
+            (val) => setState(() => _endLocation = val),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _startJourney,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF34D399),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            _buildDropdown('Start Location', _startLocation, (val) {
-              setState(() => _startLocation = val);
-            }),
-            const SizedBox(height: 16),
-            _buildDropdown('End Location', _endLocation, (val) {
-              setState(() => _endLocation = val);
-            }),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _startJourney,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Start Journey'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
+            child: const Text('Start Journey'),
+          ),
+        ],
       ),
     );
   }
 
-  /// Card displaying the currently active journey.
+  // --- NEW: This is the card that shows when the journey is in progress ---
   Widget _buildJourneyInProgressCard() {
-    return Card(
-      key: const ValueKey('in_progress'),
-      color: const Color(0xFF2D3748),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Text(
-              'Journey in Progress',
-              style: TextStyle(
-                color: Colors.white,
+    return Container(
+      key: const ValueKey('in_progress'), // Key for the AnimatedSwitcher
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2D3748),
+        borderRadius: BorderRadius.circular(16),
+        // This creates the glowing green border from your design
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.5),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // The dropdowns are now disabled to prevent changes during a journey.
+          _buildLocationDropdown('Start Location', _startLocation, null),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: IconButton(
+              icon: const Icon(
+                Icons.swap_vert,
+                color: Colors.white30,
+              ), // Dim the icon
+              onPressed: null, // Disable the swap button
+            ),
+          ),
+          _buildLocationDropdown('End Location', _endLocation, null),
+          const SizedBox(height: 24),
+          // "Started" status indicator button (not clickable)
+          ElevatedButton.icon(
+            onPressed: null, // Not clickable
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            label: const Text('Started'),
+            style: ElevatedButton.styleFrom(
+              disabledBackgroundColor: const Color(0xFF34D399),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              '$_startLocation  ➔  $_endLocation',
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _endJourney,
-              icon: const Icon(Icons.stop),
-              label: const Text('End Journey'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+          ),
+          const SizedBox(height: 12),
+          // Red "Stop Journey" button
+          ElevatedButton(
+            onPressed: _stopJourney,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
-        ),
+            child: const Icon(Icons.close, color: Colors.white, size: 28),
+          ),
+        ],
       ),
     );
   }
 
-  /// Helper to build a styled dropdown.
-  Widget _buildDropdown(
+  // This helper method is updated to handle being disabled.
+  Widget _buildLocationDropdown(
     String hint,
     String? value,
-    void Function(String?) onChanged,
+    ValueChanged<String?>? onChanged,
   ) {
     return DropdownButtonFormField<String>(
       value: value,
-      hint: Text(hint, style: const TextStyle(color: Colors.white70)),
-      dropdownColor: const Color(0xFF4A5568),
-      style: const TextStyle(color: Colors.white),
+      hint: Text(
+        hint,
+        style: TextStyle(
+          color: onChanged == null ? Colors.white30 : Colors.white70,
+        ),
+      ),
+      dropdownColor: const Color(0xFF333F54),
+      style: TextStyle(
+        color: onChanged == null ? Colors.white70 : Colors.white,
+        fontSize: 16,
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down,
+        color: onChanged == null ? Colors.white30 : Colors.white,
+      ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: const Color(0xFF4A5568),
+        fillColor: const Color(0xFF1A202C),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
       items: _locations
           .map((loc) => DropdownMenuItem(value: loc, child: Text(loc)))
           .toList(),
-      onChanged: onChanged,
+      onChanged: onChanged, // If onChanged is null, the dropdown is disabled.
+    );
+  }
+
+  Widget _buildNavigationCards(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildNavCard(
+            context: context,
+            title: 'Profile',
+            subtitle: 'Your account details',
+            icon: Icons.person_outline,
+            color: const Color(0xFF7C3AED),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildNavCard(
+            context: context,
+            title: 'About',
+            subtitle: 'Learn more about us',
+            icon: Icons.info_outline,
+            color: const Color(0xFF2563EB),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        height: 150,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(icon, color: Colors.white, size: 32),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    final langCode = context.watch<LanguageProvider>().localeCode;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Text(
+        AppLocalizations.get('copyright', langCode),
+        style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+      ),
     );
   }
 }

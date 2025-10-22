@@ -1,35 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
+/// This is a stateful widget because it needs to update its own state
+/// every second to show the correct time in real-time.
 class DateTimeBadges extends StatefulWidget {
-  final Axis axis;
-  final Color backgroundColor;
-  final TextStyle? textStyle;
-  final EdgeInsetsGeometry padding;
-  final double borderRadius;
-  final double spacing;
-  // If true, attempts to sync with an internet time source and updates periodically.
-  final bool useNetworkTime;
-  // Optional IANA timezone (e.g., 'Asia/Colombo'). If null, uses IP-based timezone.
-  final String? timeZone;
-  // How often to resync from the network to keep drift minimal.
-  final Duration resyncInterval;
-
-  const DateTimeBadges({
-    Key? key,
-    this.axis = Axis.horizontal,
-    this.backgroundColor = Colors.white10,
-    this.textStyle = const TextStyle(color: Colors.white, fontSize: 12),
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    this.borderRadius = 20,
-    this.spacing = 8,
-    this.useNetworkTime = true,
-    this.timeZone,
-    this.resyncInterval = const Duration(minutes: 10),
-  }) : super(key: key);
+  const DateTimeBadges({Key? key}) : super(key: key);
 
   @override
   State<DateTimeBadges> createState() => _DateTimeBadgesState();
@@ -37,121 +13,62 @@ class DateTimeBadges extends StatefulWidget {
 
 class _DateTimeBadgesState extends State<DateTimeBadges> {
   late Timer _timer;
-  Timer? _resyncTimer;
-  late DateTime _now;
-  bool _synced = false;
+  DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _now = DateTime.now();
-    // Start ticking locally (we'll replace with network time once synced).
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        _now = _now.add(const Duration(seconds: 1));
-      });
+    // This timer will fire every second.
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Check if the widget is still on screen before updating.
+      if (mounted) {
+        // Update the _now variable, which will cause the UI to rebuild.
+        setState(() {
+          _now = DateTime.now();
+        });
+      }
     });
-    if (widget.useNetworkTime) {
-      _syncTime();
-      _resyncTimer = Timer.periodic(widget.resyncInterval, (_) => _syncTime());
-    }
   }
 
   @override
   void dispose() {
+    // It's crucial to cancel the timer when the widget is removed
+    // to prevent memory leaks.
     _timer.cancel();
-    _resyncTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _syncTime() async {
-    try {
-      // Prefer specific timezone if provided, else use IP-based timezone.
-      final url = widget.timeZone == null
-          ? Uri.parse('https://worldtimeapi.org/api/ip')
-          : Uri.parse(
-              'https://worldtimeapi.org/api/timezone/${widget.timeZone}',
-            );
-      final resp = await http.get(url).timeout(const Duration(seconds: 6));
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        // worldtimeapi returns 'datetime' in ISO 8601 (UTC offset included) and 'unixtime'.
-        final iso = data['datetime'] as String?;
-        final unix = data['unixtime'];
-        DateTime networkNow;
-        if (iso != null) {
-          networkNow = DateTime.parse(iso);
-        } else if (unix is int) {
-          networkNow = DateTime.fromMillisecondsSinceEpoch(
-            unix * 1000,
-            isUtc: true,
-          ).toLocal();
-        } else {
-          throw Exception('Invalid time payload');
-        }
-        setState(() {
-          _now = networkNow;
-          _synced = true;
-        });
-      } else {
-        throw Exception('HTTP ${resp.statusCode}');
-      }
-    } catch (e) {
-      // On error, fallback silently to device time, but keep ticking.
-      debugPrint('DateTimeBadges: time sync failed: $e');
-      setState(() {
-        _synced = false;
-        _now = DateTime.now();
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use current locale if available
-    final locale = Localizations.maybeLocaleOf(context)?.toLanguageTag();
-    final dateFmt = DateFormat('dd MMMM yyyy', locale);
-    final timeFmt = DateFormat('hh:mm a', locale);
-    final dateStr = dateFmt.format(_now);
-    final timeStr = timeFmt.format(_now);
-
-    Container badge(String text) => Container(
-      padding: widget.padding,
+    return Container(
       decoration: BoxDecoration(
-        color: widget.backgroundColor,
-        borderRadius: BorderRadius.circular(widget.borderRadius),
+        color: const Color(0xFF333F54), // A dark grey color from your design
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(text, style: widget.textStyle),
-    );
-
-    if (widget.axis == Axis.vertical) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Row(
+        mainAxisSize: MainAxisSize.min, // Keep the row's width to a minimum
         children: [
-          badge(dateStr),
-          SizedBox(height: widget.spacing),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              badge(timeStr),
-              if (!_synced) const SizedBox(width: 4),
-              if (!_synced)
-                const Icon(Icons.sync_problem, size: 12, color: Colors.white38),
-            ],
-          ),
+          // Left badge for the date
+          _buildBadge(
+            DateFormat('d MMMM yyyy').format(_now),
+          ), // e.g., "21 October 2025"
+          // A thin vertical line to separate the badges
+          Container(height: 20, width: 1, color: Colors.white24),
+          // Right badge for the time
+          _buildBadge(DateFormat('hh:mm a').format(_now)), // e.g., "04:03 PM"
         ],
-      );
-    }
+      ),
+    );
+  }
 
-    return Row(
-      children: [
-        badge(dateStr),
-        SizedBox(width: widget.spacing),
-        badge(timeStr),
-        if (!_synced) const SizedBox(width: 4),
-        if (!_synced)
-          const Icon(Icons.sync_problem, size: 12, color: Colors.white38),
-      ],
+  /// A helper method to build the individual styled text containers.
+  Widget _buildBadge(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
     );
   }
 }
