@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:passenger_app/widgets/schedule_result_widget.dart'; // Import the new widget
+import 'package:passenger_app/widgets/schedule_result_widget.dart';
+// 1. Add new imports
+import 'package:passenger_app/models/schedule_result.dart';
+import 'package:passenger_app/services/schedule_service.dart';
 
 class BusScheduleScreen extends StatefulWidget {
   @override
@@ -8,13 +11,45 @@ class BusScheduleScreen extends StatefulWidget {
 }
 
 class _BusScheduleScreenState extends State<BusScheduleScreen> {
+  // 2. State variables are updated
+  final ScheduleService _scheduleService = ScheduleService();
   bool _isSearched = false;
-  List<Map<String, dynamic>> _scheduleResults = [];
+  bool _isSearching = false; // To show loading spinner
+  bool _isLoadingLocations = true; // To load dropdowns
+
+  List<ScheduleResult> _scheduleResults = []; // Use our new model
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _locations = ['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Matara'];
+  List<String> _locations = []; // This will be loaded from the backend
   String? _startLocation;
   String? _endLocation;
+
+  // 3. initState is updated
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations(); // Call the new function
+  }
+
+  // 4. New function to load locations from backend
+  Future<void> _loadLocations() async {
+    try {
+      final locations = await _scheduleService.getLocations();
+      if (mounted) {
+        setState(() {
+          _locations = locations;
+          _isLoadingLocations = false;
+        });
+      }
+    } catch (e) {
+      print(e); // Handle error
+      if (mounted) {
+        setState(() {
+          _isLoadingLocations = false;
+        });
+      }
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -28,19 +63,47 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
     }
   }
 
-  void _performSearch() {
+  // 5. performSearch is updated to call the backend
+  Future<void> _performSearch() async {
+    if (_startLocation == null || _endLocation == null) {
+      // You can add an error message here if you want
+      return;
+    }
+
     setState(() {
+      _isSearching = true;
       _isSearched = true;
-      _scheduleResults = [
-        {'route': 'Route 01', 'startLoc': 'Colombo Fort', 'startTime': '13.20 PM', 'endLoc': 'Kandy', 'endTime': '15.30 PM'},
-        {'route': 'Route 01', 'startLoc': 'Colombo Fort', 'startTime': '14.00 PM', 'endLoc': 'Kandy', 'endTime': '16.10 PM'},
-      ];
+      _scheduleResults = [];
     });
+
+    try {
+      final results = await _scheduleService.searchSchedules(
+        startLocation: _startLocation!,
+        endLocation: _endLocation!,
+        date: DateFormat('yyyy.MM.dd').format(_selectedDate),
+      );
+      if (mounted) {
+        setState(() {
+          _scheduleResults = results;
+        });
+      }
+    } catch (e) {
+      print(e);
+      // Handle search error
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
   }
 
+  // 6. clearSearch is updated
   void _clearSearch() {
     setState(() {
       _isSearched = false;
+      _isSearching = false; // Make sure to reset this
       _scheduleResults = [];
       _startLocation = null;
       _endLocation = null;
@@ -75,7 +138,7 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
             children: [
               _buildSearchCard(),
               SizedBox(height: 30),
-              _buildResultsArea(),
+              _buildResultsArea(), // This widget is now fully dynamic
             ],
           ),
         ),
@@ -92,12 +155,12 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
       ),
       child: Column(
         children: [
-          _buildLocationDropdown(isStart: true),
+          _buildLocationDropdown(isStart: true), // This widget is now dynamic
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Icon(Icons.swap_vert, color: Colors.white70),
           ),
-          _buildLocationDropdown(isStart: false),
+          _buildLocationDropdown(isStart: false), // This widget is now dynamic
           Divider(color: Colors.white24, height: 30),
           Row(
             children: [
@@ -128,14 +191,16 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
     );
   }
 
-  // --- THIS IS THE MISSING FUNCTION THAT CAUSED THE ERROR ---
+  // 7. buildLocationDropdown is updated
   Widget _buildLocationDropdown({required bool isStart}) {
     return DropdownButtonFormField<String>(
       value: isStart ? _startLocation : _endLocation,
       onChanged: (value) {
         setState(() {
-          if (isStart) _startLocation = value;
-          else _endLocation = value;
+          if (isStart)
+            _startLocation = value;
+          else
+            _endLocation = value;
         });
       },
       decoration: InputDecoration(
@@ -147,20 +212,33 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
       hint: Text(isStart ? 'Start Location' : 'End Location', style: TextStyle(color: Colors.black54)),
       dropdownColor: Colors.white,
       style: TextStyle(color: Colors.black87),
-      items: _locations.map((location) {
+      // Items are now built dynamically
+      items: _isLoadingLocations
+          ? [
+        DropdownMenuItem(
+          child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator())),
+        )
+      ]
+          : _locations.map((location) {
         return DropdownMenuItem(value: location, child: Text(location));
       }).toList(),
     );
   }
-  // --- END OF MISSING FUNCTION ---
 
+  // 8. buildResultsArea is updated
   Widget _buildResultsArea() {
     if (!_isSearched) {
       return Container(height: 300, alignment: Alignment.center, child: Text('Select locations and search', style: TextStyle(color: Colors.white54, fontSize: 16)));
     }
+    // Show loading spinner while searching
+    if (_isSearching) {
+      return Container(height: 300, alignment: Alignment.center, child: CircularProgressIndicator());
+    }
+
     if (_scheduleResults.isEmpty) {
       return Container(height: 300, alignment: Alignment.center, child: Text('No Available Buses', style: TextStyle(color: Colors.white54, fontSize: 16)));
     }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,12 +250,13 @@ class _BusScheduleScreenState extends State<BusScheduleScreen> {
           itemCount: _scheduleResults.length,
           itemBuilder: (context, index) {
             final bus = _scheduleResults[index];
+            // Use the data from our new ScheduleResult object
             return ScheduleResultWidget(
-              route: bus['route']!,
-              startLocation: bus['startLoc']!,
-              startTime: bus['startTime']!,
-              endLocation: bus['endLoc']!,
-              endTime: bus['endTime']!,
+              route: bus.route,
+              startLocation: bus.startLocation,
+              startTime: bus.startTime,
+              endLocation: bus.endLocation,
+              endTime: bus.endTime,
             );
           },
         ),
