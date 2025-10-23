@@ -1,6 +1,6 @@
 {
-    "name": "finalproject",
-    "short_name": "finalproject",
+    "name": "driver_ui",
+    "short_name": "driver_ui",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

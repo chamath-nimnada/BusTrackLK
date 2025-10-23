@@ -1,42 +1,41 @@
+import 'package:driver_ui/screens/auth_screen.dart';
+import 'package:driver_ui/utils/app_colors.dart';
+import 'package:driver_ui/utils/language_provider.dart';
 import 'package:flutter/material.dart';
+// This is the import that was missing
+import 'package:google_fonts/google_fonts.dart'; // <-- ADDED THIS LINE
 import 'package:provider/provider.dart';
-// --- This line is correct: Import the SplashScreen ---
-import 'screens/splash_screen.dart';
-import 'utils/auth_provider.dart';
-import 'utils/language_provider.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => LanguageProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const MyApp(),
+    // We create the provider *ABOVE* the entire application.
+    // This ensures all routes can access it.
+    ChangeNotifierProvider(
+      create: (context) => LanguageProvider(),
+      child: const MyApp(), // Run the app as a child of the provider
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // The MaterialApp is now a DESCENDANT of the provider.
     return MaterialApp(
+      title: 'Driver UI',
       debugShowCheckedModeBanner: false,
-      title: 'BusTrackLK',
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF1A202C),
-        primaryColor: const Color(0xFF4263EB),
-        fontFamily: 'Roboto',
-        textTheme: Theme.of(context).textTheme.apply(
-              bodyColor: Colors.black, // Makes text inside fields visible
-              displayColor: Colors.black,
-            ),
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: AppColors.kBackgroundColor,
+        // This line will now work because 'GoogleFonts' is imported
+        textTheme: GoogleFonts.interTextTheme(
+          Theme.of(context).textTheme,
+        ).apply(bodyColor: AppColors.kPrimaryTextColor),
       ),
-      // --- This line is correct: Set home to SplashScreen ---
-      home: const SplashScreen(),
+      // AuthScreen is the home page
+      home: const AuthScreen(),
     );
   }
 }

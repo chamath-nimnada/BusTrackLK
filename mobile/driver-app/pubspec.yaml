@@ -1,23 +1,29 @@
-name: finalproject
-description: A Flutter bus tracking application
+name: driver_ui
+description: "A new Flutter project."
 publish_to: 'none'
+
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.0
+  sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.5.0              # For API calls
-  provider: ^6.1.5+1          # State management
-  shared_preferences: ^2.5.3 # Local storage
-  intl: ^0.20.2             # Date formatting
+
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.5+1
+  shared_preferences: ^2.5.3
+  intl: ^0.20.2
+  http: ^1.5.0
+  google_fonts: ^6.2.1 # <-- ADD THIS LINE
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
+
