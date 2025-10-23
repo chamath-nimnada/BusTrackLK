@@ -1,4 +1,4 @@
-package com.example.demo.auth.model;
+package com.example.demo.model;
 
 import java.util.Date;
 

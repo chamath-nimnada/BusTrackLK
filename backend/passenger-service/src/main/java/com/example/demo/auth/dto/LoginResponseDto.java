@@ -1,6 +1,6 @@
 package com.example.demo.auth.dto;
 
-import com.example.demo.auth.model.User;
+import com.example.demo.model.User;
 
 public class LoginResponseDto {
     private String customToken;

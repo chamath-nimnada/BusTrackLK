@@ -3,7 +3,7 @@ package com.example.demo.auth.service;
 import com.example.demo.auth.dto.LoginRequestDto;
 import com.example.demo.auth.dto.LoginResponseDto;
 import com.example.demo.auth.dto.RegisterRequestDto;
-import com.example.demo.auth.model.User;
+import com.example.demo.model.User;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
