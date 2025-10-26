@@ -5,49 +5,60 @@ import 'package:driver_ui/utils/app_text_styles.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  // Change 1: Make onPressed nullable
+  final VoidCallback? onPressed;
 
   const CustomButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    // Change 2: Remove 'required'
+    this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
+    // The ElevatedButton's onPressed already accepts VoidCallback?
+    // so no change needed here. It will correctly handle null (disabled).
     return ElevatedButton(
-      onPressed: onPressed,
+      onPressed: onPressed, // Pass the potentially null callback directly
       style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.zero, // Remove default padding
+        padding: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.kDefaultBorderRadius),
         ),
-        elevation: 5, // Optional: adds a nice shadow
-        shadowColor: AppColors.kButtonBluePrimary.withOpacity(0.5),
+        elevation: 5,
+        // Use withAlpha for opacity
+        shadowColor: AppColors.kButtonBluePrimary.withAlpha(128),
+        // Handle disabled state automatically based on onPressed being null
+        disabledBackgroundColor: AppColors.kCardColor.withAlpha(150), // Example disabled color
       ),
       child: Ink(
-        // The Ink widget allows us to display a gradient
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          // Apply gradient only if the button is enabled (onPressed != null)
+          gradient: onPressed != null ? const LinearGradient(
             colors: [
               AppColors.kButtonBluePrimary,
               AppColors.kButtonBlueSecondary,
             ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-          ),
+          ) : null, // No gradient if disabled
+          // Use a solid color if disabled to match disabledBackgroundColor
+          color: onPressed == null ? Colors.transparent : null,
           borderRadius: BorderRadius.circular(AppSizes.kDefaultBorderRadius),
         ),
         child: Container(
-          // Define button size/padding
-          width: double.infinity, // Make button stretch full width
+          width: double.infinity,
           padding: const EdgeInsets.symmetric(
-            vertical: AppSizes.kDefaultPadding * 0.8, // 16.0
+            vertical: AppSizes.kDefaultPadding * 0.8,
           ),
           alignment: Alignment.center,
           child: Text(
             text,
-            style: AppTextStyles.kButtonText,
+            // Adjust text style slightly if disabled
+            style: onPressed != null
+                ? AppTextStyles.kButtonText
+                : AppTextStyles.kButtonText.copyWith(color: AppColors.kHintTextColor),
           ),
         ),
       ),

@@ -2,26 +2,31 @@ import 'package:driver_ui/utils/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// This class holds all the translation strings for the app.
+// It uses the LanguageProvider to determine which language to display.
 class AppLocalizations {
-  final String languageCode;
+  final String languageCode; // e.g., "English", "Sinhala", "Tamil"
 
   AppLocalizations(this.languageCode);
 
-  // Helper method to get the localizations object
+  // Helper method to easily get the AppLocalizations instance in widgets.
+  // It watches the LanguageProvider, so widgets using this will rebuild
+  // when the language changes.
   static AppLocalizations of(BuildContext context) {
-    // This 'watches' the provider. When the language changes,
-    // any widget using 'AppLocalizations.of(context)' will rebuild.
     final language = context.watch<LanguageProvider>().currentLanguage;
     return AppLocalizations(language);
   }
 
-  // This is your translation database
+  // The translation database.
+  // Keys are language names (matching LanguageProvider values).
+  // Values are maps where keys are translation IDs and values are the strings.
   static final Map<String, Map<String, String>> _localizedValues = {
     'English': {
       'appSubtitle': 'The All-in-One Bus Travel Companion',
       'register': 'Register',
       'login': 'Login',
-      'username': 'Username',
+      'username': 'User Name', // Still needed for register form
+      'email': 'Email', // Added for login and register
       'password': 'Password',
       'phoneNo': 'Phone No',
       'nic': 'NIC',
@@ -47,13 +52,24 @@ class AppLocalizations {
       'version': 'Version',
       'developedBy': 'Developed by',
       'releasedDate': 'Released Date',
-      'creditScore': 'Credit Score', // <-- 1. ADD THIS LINE (ENGLISH)
+      'creditScore': 'Credit Score',
+      // --- Validation Messages (Example) ---
+      'validationEnterUsername': 'Please enter a user name',
+      'validationEnterEmail': 'Please enter an email',
+      'validationValidEmail': 'Please enter a valid email',
+      'validationEnterPhone': 'Please enter a phone number',
+      'validationEnterNIC': 'Please enter an NIC',
+      'validationEnterPassword': 'Please enter a password',
+      'validationPasswordLength': 'Password must be at least 6 characters',
+      'validationEnterBusNo': 'Please enter a bus number',
+      'validationEnterRouteNo': 'Please enter a route number',
     },
     'Sinhala': {
       'appSubtitle': 'ඔබගේ සියලුම බස් ගමන් සහකරු',
       'register': 'ලියාපදිංචි වන්න',
       'login': 'පිවිසෙන්න',
       'username': 'පරිශීලක නාමය',
+      'email': 'විද්යුත් තැපෑල', // Added
       'password': 'මුරපදය',
       'phoneNo': 'දුරකථන අංකය',
       'nic': 'හැඳුනුම්පත් අංකය',
@@ -79,13 +95,24 @@ class AppLocalizations {
       'version': 'අනුවාදය',
       'developedBy': 'විසින් වැඩි දියුණු කරන ලදි',
       'releasedDate': 'නිකුත් කළ දිනය',
-      'creditScore': 'ණය ලකුණු', // <-- 2. ADD THIS LINE (SINHALA)
+      'creditScore': 'ණය ලකුණු',
+      // --- Validation Messages (Example) ---
+      'validationEnterUsername': 'කරුණාකර පරිශීලක නාමයක් ඇතුළත් කරන්න',
+      'validationEnterEmail': 'කරුණාකර විද්‍යුත් තැපෑලක් ඇතුළත් කරන්න',
+      'validationValidEmail': 'කරුණාකර වලංගු විද්‍යුත් තැපෑලක් ඇතුළත් කරන්න',
+      'validationEnterPhone': 'කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න',
+      'validationEnterNIC': 'කරුණාකර හැඳුනුම්පත් අංකයක් ඇතුළත් කරන්න',
+      'validationEnterPassword': 'කරුණාකර මුරපදයක් ඇතුළත් කරන්න',
+      'validationPasswordLength': 'මුරපදය අවම වශයෙන් අක්ෂර 6 ක් විය යුතුය',
+      'validationEnterBusNo': 'කරුණාකර බස් අංකයක් ඇතුළත් කරන්න',
+      'validationEnterRouteNo': 'කරුණාකර මාර්ග අංකයක් ඇතුළත් කරන්න',
     },
     'Tamil': {
       'appSubtitle': 'அனைத்து பஸ் பயண துணை',
       'register': 'பதிவு செய்',
       'login': 'உள்நுழை',
       'username': 'பயனர் பெயர்',
+      'email': 'மின்னஞ்சல்', // Added
       'password': 'கடவுச்சொல்',
       'phoneNo': 'தொலைபேசி எண்',
       'nic': 'NIC',
@@ -111,42 +138,65 @@ class AppLocalizations {
       'version': 'பதிப்பு',
       'developedBy': 'உருவாக்கியவர்',
       'releasedDate': 'வெளியிடப்பட்ட தேதி',
-      'creditScore': 'கடன் மதிப்பெண்', // <-- 3. ADD THIS LINE (TAMIL)
+      'creditScore': 'கடன் மதிப்பெண்',
+      // --- Validation Messages (Example) ---
+      'validationEnterUsername': 'பயனர் பெயரை உள்ளிடவும்',
+      'validationEnterEmail': 'மின்னஞ்சலை உள்ளிடவும்',
+      'validationValidEmail': 'சரியான மின்னஞ்சலை உள்ளிடவும்',
+      'validationEnterPhone': 'தொலைபேசி எண்ணை உள்ளிடவும்',
+      'validationEnterNIC': 'NIC ஐ உள்ளிடவும்',
+      'validationEnterPassword': 'கடவுச்சொல்லை உள்ளிடவும்',
+      'validationPasswordLength': 'கடவுச்சொல் குறைந்தது 6 எழுத்துகளாக இருக்க வேண்டும்',
+      'validationEnterBusNo': 'பஸ் எண்ணை உள்ளிடவும்',
+      'validationEnterRouteNo': 'பாதை எண்ணை உள்ளிடவும்',
     },
   };
 
   // --- Getters for each string ---
-  // We use getters to safely access the map
-  String get appSubtitle => _localizedValues[languageCode]!['appSubtitle']!;
-  String get register => _localizedValues[languageCode]!['register']!;
-  String get login => _localizedValues[languageCode]!['login']!;
-  String get username => _localizedValues[languageCode]!['username']!;
-  String get password => _localizedValues[languageCode]!['password']!;
-  String get phoneNo => _localizedValues[languageCode]!['phoneNo']!;
-  String get nic => _localizedValues[languageCode]!['nic']!;
-  String get busNo => _localizedValues[languageCode]!['busNo']!;
-  String get routeNo => _localizedValues[languageCode]!['routeNo']!;
-  String get forgotPassword =>
-      _localizedValues[languageCode]!['forgotPassword']!;
-  String get registrationSuccess =>
-      _localizedValues[languageCode]!['registrationSuccess']!;
-  String get ok => _localizedValues[languageCode]!['ok']!;
-  String get startLocation => _localizedValues[languageCode]!['startLocation']!;
-  String get endLocation => _localizedValues[languageCode]!['endLocation']!;
-  String get startJourney => _localizedValues[languageCode]!['startJourney']!;
-  String get started => _localizedValues[languageCode]!['started']!;
-  String get profile => _localizedValues[languageCode]!['profile']!;
-  String get profileSubtitle =>
-      _localizedValues[languageCode]!['profileSubtitle']!;
-  String get about => _localizedValues[languageCode]!['about']!;
-  String get aboutSubtitle => _localizedValues[languageCode]!['aboutSubtitle']!;
-  String get logout => _localizedValues[languageCode]!['logout']!;
-  String get aboutUs => _localizedValues[languageCode]!['aboutUs']!;
-  String get aboutBody1 => _localizedValues[languageCode]!['aboutBody1']!;
-  String get aboutBody2 => _localizedValues[languageCode]!['aboutBody2']!;
-  String get version => _localizedValues[languageCode]!['version']!;
-  String get developedBy => _localizedValues[languageCode]!['developedBy']!;
-  String get releasedDate => _localizedValues[languageCode]!['releasedDate']!;
-  String get creditScore => _localizedValues[languageCode]!['creditScore']!; // <-- 4. ADD THIS GETTER
+  // Helper method to safely get a value or return a fallback string
+  String _getString(String key) {
+    return _localizedValues[languageCode]?[key] ?? '[$key not found]';
+  }
+
+  String get appSubtitle => _getString('appSubtitle');
+  String get register => _getString('register');
+  String get login => _getString('login');
+  String get username => _getString('username');
+  String get email => _getString('email'); // <-- The important getter
+  String get password => _getString('password');
+  String get phoneNo => _getString('phoneNo');
+  String get nic => _getString('nic');
+  String get busNo => _getString('busNo');
+  String get routeNo => _getString('routeNo');
+  String get forgotPassword => _getString('forgotPassword');
+  String get registrationSuccess => _getString('registrationSuccess');
+  String get ok => _getString('ok');
+  String get startLocation => _getString('startLocation');
+  String get endLocation => _getString('endLocation');
+  String get startJourney => _getString('startJourney');
+  String get started => _getString('started');
+  String get profile => _getString('profile');
+  String get profileSubtitle => _getString('profileSubtitle');
+  String get about => _getString('about');
+  String get aboutSubtitle => _getString('aboutSubtitle');
+  String get logout => _getString('logout');
+  String get aboutUs => _getString('aboutUs');
+  String get aboutBody1 => _getString('aboutBody1');
+  String get aboutBody2 => _getString('aboutBody2');
+  String get version => _getString('version');
+  String get developedBy => _getString('developedBy');
+  String get releasedDate => _getString('releasedDate');
+  String get creditScore => _getString('creditScore');
+
+  // --- Getters for Validation Messages ---
+  String get validationEnterUsername => _getString('validationEnterUsername');
+  String get validationEnterEmail => _getString('validationEnterEmail');
+  String get validationValidEmail => _getString('validationValidEmail');
+  String get validationEnterPhone => _getString('validationEnterPhone');
+  String get validationEnterNIC => _getString('validationEnterNIC');
+  String get validationEnterPassword => _getString('validationEnterPassword');
+  String get validationPasswordLength => _getString('validationPasswordLength');
+  String get validationEnterBusNo => _getString('validationEnterBusNo');
+  String get validationEnterRouteNo => _getString('validationEnterRouteNo');
 }
 
