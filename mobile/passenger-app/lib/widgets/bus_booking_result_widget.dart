@@ -49,7 +49,6 @@ class BusResultWidget extends StatelessWidget {
               // Book Now Button
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement navigation to seat selection screen, passing tripId
                   print("Book Now tapped for Trip ID: $tripId");
                 },
                 style: ElevatedButton.styleFrom(
