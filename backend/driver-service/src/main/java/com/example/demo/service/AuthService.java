@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+// --- THIS IS THE MISSING SECTION ---
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
 import com.example.demo.dto.RegisterRequest;
@@ -14,6 +15,8 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
+// --- END OF MISSING SECTION ---
+
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -23,14 +26,7 @@ import java.util.concurrent.ExecutionException;
 public class AuthService {
 
     /**
-     * Registers a new driver using Firebase Authentication and saves their details
-     * to Firestore collections 'driver' and 'buses'.
-     *
-     * @param registerRequest DTO containing registration details (email, password, etc.)
-     * @return The UID of the newly created Firebase user.
-     * @throws FirebaseAuthException If Firebase Auth fails (e.g., email already exists).
-     * @throws ExecutionException    If Firestore operations fail.
-     * @throws InterruptedException  If Firestore operations are interrupted.
+     * Registers a new driver and sets their status to "pending".
      */
     public String registerUser(RegisterRequest registerRequest)
             throws FirebaseAuthException, ExecutionException, InterruptedException {
@@ -38,9 +34,9 @@ public class AuthService {
         // --- OPERATION 1: Create the user in Firebase Authentication ---
         FirebaseAuth auth = FirebaseAuth.getInstance();
         UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
-                .setEmail(registerRequest.getEmail()) // Use email
+                .setEmail(registerRequest.getEmail())
                 .setPassword(registerRequest.getPassword())
-                .setDisplayName(registerRequest.getNic()); // Using NIC as display name for Firebase Auth
+                .setDisplayName(registerRequest.getNic()); // Using NIC as display name
 
         ApiFuture<UserRecord> userRecordFuture = auth.createUserAsync(createRequest);
         UserRecord userRecord = userRecordFuture.get(); // Wait for completion
@@ -56,11 +52,11 @@ public class AuthService {
         driver.setNic(registerRequest.getNic());
         driver.setBusNo(registerRequest.getBusNo());
         driver.setBusRoute(registerRequest.getRouteNo());
-        // Note: Credit score is likely calculated/assigned later, not during registration
+        driver.setStatus("pending"); // Set status to "pending"
 
         ApiFuture<WriteResult> driverWriteFuture = db.collection("driver").document(uid).set(driver);
         driverWriteFuture.get(); // Wait for completion
-        System.out.println("Saved new driver to Firestore 'driver' collection at doc ID: " + uid);
+        System.out.println("Saved new driver to Firestore with status 'pending': " + uid);
 
         // --- OPERATION 3: Save the Bus details to the "buses" collection ---
         Bus bus = new Bus();
@@ -78,15 +74,7 @@ public class AuthService {
 
 
     /**
-     * Verifies a Firebase ID Token provided by the client and fetches the corresponding
-     * driver details from the Firestore 'driver' collection.
-     *
-     * @param loginRequest DTO containing the Firebase ID Token.
-     * @return A LoginResponse DTO containing the driver's details.
-     * @throws FirebaseAuthException If the ID Token is invalid or expired.
-     * @throws ExecutionException    If Firestore operations fail.
-     * @throws InterruptedException  If Firestore operations are interrupted.
-     * @throws RuntimeException      If driver data is not found in Firestore for the verified UID.
+     * Verifies a Firebase ID Token and checks if the driver's status is "approved".
      */
     public LoginResponse loginUser(LoginRequest loginRequest)
             throws FirebaseAuthException, ExecutionException, InterruptedException {
@@ -112,15 +100,24 @@ public class AuthService {
             // Convert the Firestore document data into our Java Driver object
             Driver driver = driverDocument.toObject(Driver.class);
             if (driver == null) {
-                // This should ideally not happen if the document exists
                 throw new RuntimeException("Failed to convert Firestore document to Driver object for UID: " + uid);
             }
+
+            // --- NEW STATUS CHECK ---
+            // Check if the driver's status is "approved"
+            String status = driver.getStatus();
+            if (!"approved".equals(status)) {
+                // If status is "pending", "rejected", or null, block the login
+                System.out.println("Login blocked for user " + uid + ". Status is: " + status);
+                throw new RuntimeException("Your account is not yet approved. Please wait for an admin to review your request.");
+            }
+            // --- END OF NEW STATUS CHECK ---
+
             System.out.println("Successfully fetched driver data for email: " + driver.getEmail());
 
-            // Safely get the creditScore from the document, defaulting to 0.0 if it doesn't exist or isn't a number
+            // Safely get the creditScore from the document, defaulting to 0.0
             double creditScore = 0.0;
             if (driverDocument.contains("creditScore") && driverDocument.get("creditScore") instanceof Number) {
-                // Use getDouble() for safer number handling
                 creditScore = driverDocument.getDouble("creditScore");
             } else {
                 System.out.println("Credit score not found or invalid type for UID: " + uid + ", defaulting to 0.0");
@@ -128,7 +125,7 @@ public class AuthService {
 
 
             // --- OPERATION 3: Create and return the LoginResponse DTO ---
-            // Package the fetched data into the response object for the client
+            // This code will ONLY run if the status was "approved"
             return new LoginResponse(
                     driver.getEmail(),
                     driver.getPhoneNo(),
@@ -138,10 +135,9 @@ public class AuthService {
                     creditScore // Use the safely retrieved score
             );
         } else {
-            // If the driver document doesn't exist for this UID, the data is inconsistent
+            // If the driver document doesn't exist for this UID
             System.err.println("Error: No driver document found in Firestore for verified UID: " + uid);
             throw new RuntimeException("Driver data not found in database for user: " + uid);
         }
     }
 }
-
