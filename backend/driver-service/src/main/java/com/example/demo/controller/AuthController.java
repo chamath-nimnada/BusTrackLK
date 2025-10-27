@@ -1,15 +1,19 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.LoginRequest; // <-- 1. ADD IMPORT
-import com.example.demo.dto.LoginResponse; // <-- 1. ADD IMPORT
+import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.LoginResponse;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.service.AuthService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException; // <-- Import
+
+import com.google.firebase.auth.FirebaseAuthException; // <-- Import
 
 @RestController
 @RequestMapping("/api")
@@ -18,40 +22,48 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    // --- YOUR EXISTING registerUser ENDPOINT ---
+    // --- registerUser endpoint (no changes needed here) ---
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
             String uid = authService.registerUser(registerRequest);
             return ResponseEntity.ok("User registered successfully with UID: " + uid);
         } catch (Exception e) {
-            // It's better to log the error on the server
             System.err.println("Registration failed: " + e.getMessage());
-            // Return a more generic error message to the client
-            return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+            // Check if it's a Firebase exception (e.g., email already exists)
+            if (e instanceof FirebaseAuthException) {
+                return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+            }
+            // Generic error for other issues
+            return ResponseEntity.status(500).body("Registration failed due to an internal error.");
         }
     }
 
 
-    // --- 2. ADD THIS NEW loginUser ENDPOINT ---
+    // --- loginUser endpoint ---
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
         try {
-            // Call the loginUser method in the service
             LoginResponse loginResponse = authService.loginUser(loginRequest);
-
-            // If successful, send a 200 OK response with the LoginResponse data
             return ResponseEntity.ok(loginResponse);
 
+        } catch (ResponseStatusException e) {
+            // Handle specific status exceptions from the service (like 403 Forbidden)
+            System.err.println("Login failed: " + e.getReason() + " (Status: " + e.getStatusCode() + ")");
+            // Return the status code and reason provided by the exception
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+
+        } catch (FirebaseAuthException e) {
+            // Handle Firebase Auth specific errors (e.g., invalid token)
+            System.err.println("Login failed (Firebase Auth): " + e.getMessage());
+            return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
+
         } catch (Exception e) {
-            // If verification fails or driver data is not found
-            System.err.println("Login failed: " + e.getMessage());
-            // Send a 401 Unauthorized or 400 Bad Request status
-            // (You might want more specific error handling later)
-            return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
+            // Handle other unexpected errors during login
+            System.err.println("Login failed (General Exception): " + e.getMessage());
+            e.printStackTrace(); // Log stack trace for unexpected errors
+            // Return a generic 500 Internal Server Error
+            return ResponseEntity.status(500).body("Login failed due to an unexpected server error.");
         }
     }
-    // --- END OF NEW ENDPOINT ---
-
 }
-

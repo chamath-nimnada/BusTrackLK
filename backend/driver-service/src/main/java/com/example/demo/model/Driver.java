@@ -13,6 +13,9 @@ public class Driver {
     private String busNo;
     private String busRoute; // Matches your collection field "Bus route"
 
+    // --- 1. ADD STATUS FIELD ---
+    private String status; // e.g., "pending", "approved", "rejected"
+
     // Getters and Setters for all fields
 
     public String getUid() {
@@ -61,5 +64,14 @@ public class Driver {
 
     public void setBusRoute(String busRoute) {
         this.busRoute = busRoute;
+    }
+
+    // --- 2. ADD GETTER/SETTER FOR STATUS ---
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

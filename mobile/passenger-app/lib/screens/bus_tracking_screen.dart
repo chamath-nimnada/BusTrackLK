@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:passenger_app/widgets/bus_tracking_result_widget.dart';
-
-// IMPORTANT: For the map to work, you will need a package.
-// For now, I've commented out the import. When you're ready, uncomment it.
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart'; // <-- 1. IMPORT LOCATION
+import 'package:passenger_app/services/tracking_service.dart'; // <-- 2. IMPORT NEW SERVICE
+import 'package:passenger_app/models/live_bus_result.dart'; // <-- 3. IMPORT NEW MODEL
+import 'package:flutter/services.dart'; // For rootBundle
 
 class BusTrackingScreen extends StatefulWidget {
   @override
@@ -12,32 +13,149 @@ class BusTrackingScreen extends StatefulWidget {
 }
 
 class _BusTrackingScreenState extends State<BusTrackingScreen> {
+  // --- 4. UPDATE STATE VARIABLES ---
+  final TrackingService _trackingService = TrackingService();
+  final Location _location = Location();
+
   bool _isSearched = false;
-  List<Map<String, dynamic>> _trackingResults = [];
+  bool _isSearching = false; // Loading state
+  String? _searchErrorMessage; // Error state
+
+  List<LiveBusResult> _trackingResults = []; // Use new model
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _locations = ['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Matara'];
-  String? _startLocation;
+  // Mock locations for dropdowns. This should use ScheduleService like other screens.
+  // For this example, we'll keep the mock list but use the "start" one as the Route No.
+  final List<String> _locations = ['100', '101', '122', '138', '17'];
+  String? _startLocation; // This will be used as the Route No
   String? _endLocation;
 
-  void _performSearch() {
+  // --- Map-specific variables
+  GoogleMapController? _mapController;
+  LocationData? _currentUserLocation;
+  BitmapDescriptor? _busIcon;
+  Set<Marker> _mapMarkers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomIcon();
+    _getUserLocation();
+  }
+
+  // --- 5. NEW FUNCTIONS TO PREPARE THE MAP ---
+  Future<void> _loadCustomIcon() async {
+    final icon = await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(size: Size(48, 48)),
+      'assets/bus_icon.png', // Make sure this asset exists
+    );
+    setState(() {
+      _busIcon = icon;
+    });
+  }
+
+  Future<void> _getUserLocation() async {
+    bool serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    PermissionStatus permission = await _location.hasPermission();
+    if (permission == PermissionStatus.denied) {
+      permission = await _location.requestPermission();
+      if (permission != PermissionStatus.granted) return;
+    }
+
+    final locationData = await _location.getLocation();
+    setState(() {
+      _currentUserLocation = locationData;
+    });
+    // Animate map to user's location
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(locationData.latitude!, locationData.longitude!),
+        14.0, // Zoom level
+      ),
+    );
+  }
+
+  // --- 6. UPDATE SEARCH/CLEAR FUNCTIONS ---
+  Future<void> _performSearch() async {
+    if (_startLocation == null) {
+      setState(() => _searchErrorMessage = 'Please select a route.');
+      return;
+    }
+
     setState(() {
       _isSearched = true;
-      _trackingResults = [
-        {'route': 'Route 01', 'start': 'Colombo Fort', 'end': 'Kandy', 'busNo': 'ABC 4578'},
-        {'route': 'Route 01', 'start': 'Colombo Fort', 'end': 'Kandy', 'busNo': 'AC 3378'},
-        {'route': 'Route 01', 'start': 'Colombo Fort', 'end': 'Kandy', 'busNo': 'WC 1578'},
-      ];
+      _isSearching = true;
+      _searchErrorMessage = null;
+      _trackingResults = [];
     });
+
+    try {
+      // Call the new service. We use startLocation as the route number.
+      final results = await _trackingService.searchLiveBuses(
+        startLocation: _startLocation!,
+        endLocation: _endLocation ?? "", // End location isn't critical for this query
+        date: DateFormat('yyyy.MM.dd').format(_selectedDate),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _trackingResults = results;
+        // Update the map markers
+        _updateMapMarkers(results);
+      });
+
+    } catch (e) {
+      if (mounted) {
+        setState(() => _searchErrorMessage = e.toString().replaceFirst("Exception: ", ""));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
+    }
   }
 
   void _clearSearch() {
     setState(() {
       _isSearched = false;
+      _isSearching = false;
+      _searchErrorMessage = null;
       _trackingResults = [];
       _startLocation = null;
       _endLocation = null;
       _selectedDate = DateTime.now();
+      _mapMarkers = {}; // Clear map markers
+    });
+  }
+
+  // --- 7. NEW FUNCTION TO UPDATE MAP MARKERS ---
+  void _updateMapMarkers(List<LiveBusResult> buses) {
+    Set<Marker> markers = {};
+    if (_busIcon == null) {
+      print("Bus icon not loaded yet");
+      return; // Don't build markers if icon isn't ready
+    }
+
+    for (final bus in buses) {
+      markers.add(
+        Marker(
+          markerId: MarkerId(bus.driverUid),
+          position: bus.location,
+          icon: _busIcon!,
+          infoWindow: InfoWindow(
+            title: 'Bus: ${bus.busNo}',
+            snippet: 'Route: ${bus.routeNo}',
+          ),
+        ),
+      );
+    }
+    setState(() {
+      _mapMarkers = markers;
     });
   }
 
@@ -91,7 +209,6 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
     );
   }
 
-  // This function was likely missing from your file
   Widget _buildSearchCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -101,6 +218,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
       ),
       child: Column(
         children: [
+          // 8. UPDATE DROPDOWNS. "Start" is now "Route"
           _buildLocationDropdown(isStart: true),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -121,30 +239,39 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _isSearched ? _clearSearch : _performSearch,
+                  onPressed: _isSearching ? null : (_isSearched ? _clearSearch : _performSearch),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isSearched ? Color(0xFFEF4444) : Color(0xFF8B5CF6),
                     padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: Text(_isSearched ? 'Clear' : 'Search', style: TextStyle(fontSize: 16, color: Colors.white)),
+                  child: _isSearching
+                      ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(_isSearched ? 'Clear' : 'Search', style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
             ],
           ),
+          // Show error message
+          if (_searchErrorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 15.0),
+              child: Text(_searchErrorMessage!, style: TextStyle(color: Colors.redAccent, fontSize: 14), textAlign: TextAlign.center),
+            ),
         ],
       ),
     );
   }
 
-  // This function was likely missing from your file
   Widget _buildLocationDropdown({required bool isStart}) {
+    // 9. UPDATE HINTS to clarify Route vs Location
     return DropdownButtonFormField<String>(
       value: isStart ? _startLocation : _endLocation,
       onChanged: (value) {
         setState(() {
           if (isStart) _startLocation = value;
           else _endLocation = value;
+          _searchErrorMessage = null; // Clear error on change
         });
       },
       decoration: InputDecoration(
@@ -153,7 +280,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       ),
-      hint: Text(isStart ? 'Start Location' : 'End Location', style: TextStyle(color: Colors.black54)),
+      hint: Text(isStart ? 'Select Route (e.g., 100)' : 'End Location (Optional)', style: TextStyle(color: Colors.black54)),
       dropdownColor: Colors.white,
       style: TextStyle(color: Colors.black87),
       items: _locations.map((location) {
@@ -180,7 +307,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
         ),
         SizedBox(height: 20),
         Container(
-          height: 400,
+          height: 400, // Fixed height for the TabBarView
           child: TabBarView(
             children: [
               _buildMapView(),
@@ -192,53 +319,50 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
     );
   }
 
+  // 10. UPDATE LIST VIEW to handle new states
   Widget _buildListView() {
-    if (!_isSearched || _trackingResults.isEmpty) {
-      return Center(child: Text('No Available Buses', style: TextStyle(color: Colors.white54, fontSize: 16)));
+    if (_isSearching) {
+      return Center(child: CircularProgressIndicator());
     }
+    if (!_isSearched) {
+      return Center(child: Text('Search for a route to see live buses.', style: TextStyle(color: Colors.white54, fontSize: 16)));
+    }
+    if (_searchErrorMessage != null) {
+      return Center(child: Text(_searchErrorMessage!, style: TextStyle(color: Colors.redAccent, fontSize: 16), textAlign: TextAlign.center,));
+    }
+    if (_trackingResults.isEmpty) {
+      return Center(child: Text('No live buses found for this route.', style: TextStyle(color: Colors.white54, fontSize: 16)));
+    }
+
     return ListView.builder(
       itemCount: _trackingResults.length,
       itemBuilder: (context, index) {
         final bus = _trackingResults[index];
         return BusTrackingResultWidget(
-          route: bus['route']!,
-          startLocation: bus['start']!,
-          endLocation: bus['end']!,
-          busNumber: bus['busNo']!,
+          bus: bus, // Pass the full LiveBusResult object
         );
       },
     );
   }
 
+  // 11. UPDATE MAP VIEW to show user and buses
   Widget _buildMapView() {
-    if (!_isSearched || _trackingResults.isEmpty) {
-      return Center(child: Text('No Available Buses', style: TextStyle(color: Colors.white54, fontSize: 16)));
-    }
-
-    // This is the real Google Map implementation
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: GoogleMap(
+        onMapCreated: (controller) {
+          _mapController = controller;
+        },
         mapType: MapType.normal,
-        // The initial camera position will be centered on Sri Lanka.
         initialCameraPosition: CameraPosition(
-          target: LatLng(7.8731, 80.7718), // Centered on Sri Lanka
-          zoom: 7.5, // Zoom level to see the whole country
+          target: _currentUserLocation != null
+              ? LatLng(_currentUserLocation!.latitude!, _currentUserLocation!.longitude!)
+              : LatLng(6.9271, 79.8612), // Default to Colombo if no location
+          zoom: 12.0,
         ),
-        // To show the user's current location blue dot (requires location permissions)
-        myLocationEnabled: true,
+        myLocationEnabled: true, // Shows the blue dot for user
         myLocationButtonEnabled: true,
-
-        // In the future, you will get bus locations from your backend
-        // and add them here as a Set<Marker>.
-        // markers: {
-        //   Marker(
-        //     markerId: MarkerId('bus_1'),
-        //     position: LatLng(6.9271, 79.8612), // Example bus location in Colombo
-        //     infoWindow: InfoWindow(title: 'Bus: ABC 4578'),
-        //     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        //   ),
-        // },
+        markers: _mapMarkers, // Use the markers from our state
       ),
     );
   }

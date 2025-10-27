@@ -1,96 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:passenger_app/models/live_bus_result.dart'; // <-- 1. IMPORT NEW MODEL
+import 'package:passenger_app/screens/live_tracking_map_screen.dart'; // <-- 2. IMPORT NEW SCREEN
 
 class BusTrackingResultWidget extends StatelessWidget {
-  final String route;
-  final String startLocation;
-  final String endLocation;
-  final String busNumber;
+  // 3. Use the new LiveBusResult model
+  final LiveBusResult bus;
 
   const BusTrackingResultWidget({
     Key? key,
-    required this.route,
-    required this.startLocation,
-    required this.endLocation,
-    required this.busNumber,
+    required this.bus,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Color(0xFF374151).withOpacity(0.5),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Timeline Column
-          Column(
-            children: [
-              Icon(Icons.circle, color: Color(0xFF8B5CF6), size: 16),
-              Container(height: 50, width: 2, color: Colors.white24),
-            ],
-          ),
-          SizedBox(width: 15),
-          // Details Column
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(route, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                Text(
+                  'Route ${bus.routeNo} - ${bus.busNo}', // <-- 4. Use live data
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.circle, color: Color(0xFF10B981), size: 12),
-                        SizedBox(width: 8),
-                        Text(startLocation, style: TextStyle(color: Colors.white70)),
-                      ],
+                    Icon(Icons.person, color: Colors.white70, size: 16),
+                    SizedBox(width: 5),
+                    Text(
+                      bus.driverName, // <-- 4. Use live data
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Container(height: 2, color: Colors.white24),
-                      ),
-                    ),
-                    Text(endLocation, style: TextStyle(color: Colors.white70)),
-                    Icon(Icons.circle, color: Color(0xFF10B981), size: 12),
                   ],
                 ),
-                SizedBox(height: 15),
+                SizedBox(height: 5),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white30),
-                      ),
-                      child: Row(
-                        children: [
-                          Text('Bus', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          SizedBox(width: 8),
-                          Text(busNumber, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF8B5CF6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      ),
-                      child: Text('Track', style: TextStyle(color: Colors.white)),
+                    Icon(Icons.access_time, color: Colors.white70, size: 16),
+                    SizedBox(width: 5),
+                    Text(
+                      'Last seen: ${bus.lastUpdated.toLocal().hour}:${bus.lastUpdated.minute.toString().padLeft(2, '0')}', // <-- 4. Use live data
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
-                )
+                ),
               ],
+            ),
+          ),
+          SizedBox(width: 10),
+          // --- 5. ADD THE TRACK BUTTON ---
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LiveTrackingMapScreen(bus: bus),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF8B5CF6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text(
+              'Track',
+              style: TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
         ],
