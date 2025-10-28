@@ -28,7 +28,7 @@ android {
         // You can update the following values to match your application needs.
 // For more information, see: https://flutter.dev/to/review-gradle-config.
 
-        minSdk = 23  // Override Flutter's default - Firebase Auth requires 23
+        minSdk = flutter.minSdkVersion  // Override Flutter's default - Firebase Auth requires 23
 
         targetSdk = 35 // UPDATED
         versionCode = flutter.versionCode
