@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "282771332137",
+    "firebase_url": "https://bustracklk-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "bustracklk",
+    "storage_bucket": "bustracklk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282771332137:android:2ad16e7fabc94f41d51038",
+        "android_client_info": {
+          "package_name": "com.example.driver_ui"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpJr_ftEzQTcSLTgbijOEq9AasM7D8FBk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282771332137:android:6f6c5d4253bd7123d51038",
+        "android_client_info": {
+          "package_name": "com.example.passenger_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpJr_ftEzQTcSLTgbijOEq9AasM7D8FBk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
