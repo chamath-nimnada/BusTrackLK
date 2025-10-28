@@ -64,6 +64,7 @@ const ManageAdmin = () => {
 };
 
 // ---------------- Add Admin Form ----------------
+<<<<<<< Updated upstream
 const AddAdminForm = () => (
   <div className="vstack gap-4">
     <div className="d-flex align-items-center gap-3 mb-3">
@@ -117,6 +118,127 @@ const AddAdminForm = () => (
     </button>
   </div>
 );
+=======
+const AddAdminForm = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    username: "",
+    password: "",
+    age: "",
+    email: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const adminPayload = {
+      ...formData,
+      age: Number(formData.age),
+      adminStatus: "pending", // default status
+    };
+
+    try {
+      // Call your Spring Boot API to add admin
+      await axios.post("http://localhost:8080/api/admins/create", adminPayload);
+      alert("Admin added successfully!");
+      setFormData({ name: "", username: "", password: "", age: "", email: "" });
+    } catch (error) {
+      console.error("Error adding admin:", error);
+      alert("Failed to add admin. Check console for details.");
+    }
+  };
+
+  return (
+    <form className="vstack gap-4" onSubmit={handleSubmit}>
+      <div className="d-flex align-items-center gap-3 mb-3">
+        <div
+          className="d-flex align-items-center justify-content-center rounded-3 text-white"
+          style={{
+            width: "80px",
+            height: "80px",
+            background: "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+          }}
+        >
+          <UserPlus style={{ width: "40px", height: "40px" }} />
+        </div>
+        <div>
+          <h2 className="h4 fw-bold text-white mb-1">Add New Admin</h2>
+          <p className="text-light mb-0" style={{ color: "#d8b4fe" }}>
+            Create a new administrator account
+          </p>
+        </div>
+      </div>
+
+      <div className="row g-3">
+        <div className="col-md-6">
+          <FormInput
+            label="Full Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="John Doe"
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="johndoe"
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="admin@example.com"
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="••••••••"
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput
+            label="Age"
+            type="number"
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+            placeholder="30"
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="btn btn-lg w-100 text-white fw-semibold mt-3 shadow border-0"
+        style={{
+          background: "linear-gradient(90deg, #a855f7 0%, #ec4899 100%)",
+          transition: "all 0.3s",
+        }}
+      >
+        Create Admin Account
+      </button>
+    </form>
+  );
+};
+>>>>>>> Stashed changes
 
 // ---------------- Update Admin Form ----------------
 const UpdateAdminForm = () => (
@@ -149,6 +271,7 @@ const UpdateAdminForm = () => (
         <FormInput label="Full Name" placeholder="John Doe" />
       </div>
       <div className="col-md-6">
+<<<<<<< Updated upstream
         <FormInput label="Email" placeholder="admin@example.com" type="email" />
       </div>
       <div className="col-md-6">
@@ -156,6 +279,12 @@ const UpdateAdminForm = () => (
       </div>
       <div className="col-md-6">
         <FormInput label="Phone Number" placeholder="+1 234 567 8900" />
+=======
+        <FormInput label="Username" placeholder="johndoe" />
+      </div>
+      <div className="col-md-6">
+        <FormInput label="Age" placeholder="30" type="number" />
+>>>>>>> Stashed changes
       </div>
     </div>
 
