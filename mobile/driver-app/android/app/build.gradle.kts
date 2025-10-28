@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.example.driver_ui"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"  // Override Flutter's default NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -28,7 +28,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
 
-        minSdk = flutter.minSdkVersion  // <--- THIS IS THE FIX. I changed it from flutter.minSdkVersion
+        minSdk = 23  // Override Flutter's default - Firebase Auth requires 23
 
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

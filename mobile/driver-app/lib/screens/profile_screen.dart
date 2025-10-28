@@ -169,7 +169,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSizes.kDefaultPadding * 0.25), // Spacing
           // Phone Number
           Text(
-            driverInfo.phoneNumber,
+            driverInfo.phone,
             style: AppTextStyles.kSubtitle.copyWith(fontSize: 16),
           ),
           const SizedBox(height: AppSizes.kDefaultPadding * 1.5), // Spacing

@@ -26,6 +26,8 @@ dependencies:
   cloud_firestore: ^5.0.0    # For the database
   # --- END OF ADDED LINES ---
 
+  location: ^6.0.2 # For getting live location updates
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
