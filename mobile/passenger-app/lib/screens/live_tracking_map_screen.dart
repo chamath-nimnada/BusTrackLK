@@ -1,9 +1,10 @@
+// lib/screens/live_tracking_map_screen.dart
+
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'package:passenger_app/models/live_bus_result.dart';
-import 'package:flutter/services.dart'; // For rootBundle
 
 class LiveTrackingMapScreen extends StatefulWidget {
   final LiveBusResult bus;
@@ -16,129 +17,123 @@ class LiveTrackingMapScreen extends StatefulWidget {
 
 class _LiveTrackingMapScreenState extends State<LiveTrackingMapScreen> {
   GoogleMapController? _mapController;
-  Location _location = Location();
-  StreamSubscription<LocationData>? _locationSubscription;
-
-  Marker? _userMarker;
-  Marker? _busMarker;
   BitmapDescriptor? _busIcon;
+  Marker? _busMarker;
+
+  // Stream subscription to listen for location changes
+  StreamSubscription<DocumentSnapshot>? _busLocationSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadCustomIcon();
-    _startLocationTracking();
+    _setInitialMarker();
+    _subscribeToBusLocation();
   }
 
   @override
   void dispose() {
-    _locationSubscription?.cancel();
+    // 1. Cancel the stream subscription
+    _busLocationSubscription?.cancel();
     _mapController?.dispose();
     super.dispose();
   }
 
   Future<void> _loadCustomIcon() async {
     final icon = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(size: Size(48, 48)),
-      'assets/bus_icon.png', // Make sure this asset exists
+      const ImageConfiguration(size: Size(48, 48)),
+      'assets/bus_icon.png',
     );
     setState(() {
       _busIcon = icon;
-      // Set initial bus marker
-      _busMarker = Marker(
-        markerId: MarkerId(widget.bus.driverUid),
-        position: widget.bus.location,
-        icon: _busIcon ?? BitmapDescriptor.defaultMarker,
-        infoWindow: InfoWindow(
-          title: 'Bus: ${widget.bus.busNo}',
-          snippet: 'Route: ${widget.bus.routeNo}',
-        ),
-      );
+      // Update marker icon if it already exists
+      if (_busMarker != null) {
+        _busMarker = _busMarker!.copyWith(
+          iconParam: _busIcon ?? BitmapDescriptor.defaultMarker,
+        );
+      }
     });
   }
 
-  void _startLocationTracking() async {
-    bool serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) return;
-    }
+  // 2. Set the marker to the bus's last known location
+  void _setInitialMarker() {
+    _busMarker = Marker(
+      markerId: MarkerId(widget.bus.driverUid),
+      position: widget.bus.location,
+      icon: _busIcon ?? BitmapDescriptor.defaultMarker,
+      infoWindow: InfoWindow(
+        title: 'Bus: ${widget.bus.busNo}',
+        snippet: 'Route: ${widget.bus.routeNo}',
+      ),
+    );
+  }
 
-    PermissionStatus permission = await _location.hasPermission();
-    if (permission == PermissionStatus.denied) {
-      permission = await _location.requestPermission();
-      if (permission != PermissionStatus.granted) return;
-    }
+  // 3. This is the new "live" tracking logic
+  void _subscribeToBusLocation() {
+    final docRef = FirebaseFirestore.instance
+        .collection('live_bus_locations')
+        .doc(widget.bus.driverUid);
 
-    // Start listening for user's location
-    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
-      if (!mounted) return;
+    _busLocationSubscription = docRef.snapshots().listen((snapshot) {
+      if (!snapshot.exists) {
+        // Bus has stopped sharing, maybe show a dialog or pop the screen
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Bus has ended its journey.'),
+                backgroundColor: Colors.red),
+          );
+          Navigator.of(context).pop();
+        }
+        return;
+      }
+
+      // 4. Get new location from the snapshot
+      final data = snapshot.data() as Map<String, dynamic>;
+      final geoPoint = data['location'] as GeoPoint;
+      final newLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
+
+      // 5. Update the marker on the map
       setState(() {
-        final userLatLng = LatLng(currentLocation.latitude!, currentLocation.longitude!);
-        _userMarker = Marker(
-          markerId: MarkerId('user_location'),
-          position: userLatLng,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: InfoWindow(title: 'Your Location'),
+        _busMarker = Marker(
+          markerId: MarkerId(widget.bus.driverUid),
+          position: newLocation,
+          icon: _busIcon ?? BitmapDescriptor.defaultMarker,
+          infoWindow: InfoWindow(
+            title: 'Bus: ${widget.bus.busNo}',
+            snippet: 'Route: ${widget.bus.routeNo}',
+          ),
         );
       });
 
-      // Animate camera to fit both markers
-      _animateCameraToFit();
+      // 6. Animate the map camera to the new location
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLng(newLocation),
+      );
+    }, onError: (error) {
+      // Handle error
     });
-
-    // TODO: In a real app, you would also use a Stream/Timer to
-    // re-fetch the bus's location, as its initial location will become stale.
-    // For this simple example, we only show the initial bus location.
   }
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-    _animateCameraToFit();
-  }
-
-  void _animateCameraToFit() {
-    if (_mapController == null || _userMarker == null || _busMarker == null) {
-      return;
-    }
-
-    final userPos = _userMarker!.position;
-    final busPos = _busMarker!.position;
-
-    LatLngBounds bounds = LatLngBounds(
-      southwest: LatLng(
-        userPos.latitude < busPos.latitude ? userPos.latitude : busPos.latitude,
-        userPos.longitude < busPos.longitude ? userPos.longitude : busPos.longitude,
-      ),
-      northeast: LatLng(
-        userPos.latitude > busPos.latitude ? userPos.latitude : busPos.latitude,
-        userPos.longitude > busPos.longitude ? userPos.longitude : busPos.longitude,
-      ),
-    );
-
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 100.0), // 100.0 padding
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    Set<Marker> markers = {};
-    if (_userMarker != null) markers.add(_userMarker!);
-    if (_busMarker != null) markers.add(_busMarker!);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Tracking Bus: ${widget.bus.busNo}'),
-        backgroundColor: Color(0xFF111827),
+        backgroundColor: const Color(0xFF111827),
       ),
       body: GoogleMap(
         onMapCreated: _onMapCreated,
         initialCameraPosition: CameraPosition(
           target: widget.bus.location,
-          zoom: 14,
+          zoom: 16, // Zoom in a bit closer
         ),
-        markers: markers,
+        // 7. Display the single, updating bus marker
+        markers: _busMarker == null ? {} : {_busMarker!},
       ),
     );
   }

@@ -1,54 +1,59 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+// lib/services/tracking_service.dart
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:passenger_app/models/live_bus_result.dart';
+import 'package:flutter/foundation.dart';
 
 class TrackingService {
-  // TODO: Replace with your actual passenger-service IP/domain
-  final String _baseUrl = "http://10.0.2.2:8081/api";
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const String _collectionName = 'live_bus_locations';
 
   // Searches for buses on a specific route
   Future<List<LiveBusResult>> searchLiveBuses({
-    required String startLocation,
+    required String startLocation, // This is used as the route number
     required String endLocation,
     required String date,
   }) async {
-    // For simplicity, we pass startLocation as the route number
-    // A real app would have a mapping: (start, end) -> routeNo
     final routeNo = startLocation;
 
-    final url = Uri.parse(
-        '$_baseUrl/tracking/search?startLocation=$routeNo&endLocation=$endLocation&date=$date');
-
     try {
-      final response = await http.get(url);
+      // 1. Query the 'live_bus_locations' collection
+      final querySnapshot = await _firestore
+          .collection(_collectionName)
+          .where('routeNo', isEqualTo: routeNo) // 2. Filter by route number
+          .get();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => LiveBusResult.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load bus results');
-      }
+      // 3. Map the documents to LiveBusResult objects
+      final buses = querySnapshot.docs
+          .map((doc) => LiveBusResult.fromFirestore(doc))
+          .toList();
+
+      return buses;
     } catch (e) {
-      print("Error in searchLiveBuses: $e");
+      if (kDebugMode) {
+        print("Error in searchLiveBuses: $e");
+      }
       throw Exception('Error connecting to server.');
     }
   }
 
   // Gets ALL active buses (for the "near me" map view)
   Future<List<LiveBusResult>> getAllLiveBuses() async {
-    final url = Uri.parse('$_baseUrl/tracking/all');
-
     try {
-      final response = await http.get(url);
+      // 1. Get all documents from the collection
+      final querySnapshot =
+      await _firestore.collection(_collectionName).get();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => LiveBusResult.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load all live buses');
-      }
+      // 2. Map the documents to LiveBusResult objects
+      final buses = querySnapshot.docs
+          .map((doc) => LiveBusResult.fromFirestore(doc))
+          .toList();
+
+      return buses;
     } catch (e) {
-      print("Error in getAllLiveBuses: $e");
+      if (kDebugMode) {
+        print("Error in getAllLiveBuses: $e");
+      }
       throw Exception('Error connecting to server.');
     }
   }
