@@ -12,6 +12,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+
+
+  google_maps_flutter: ^2.5.0
+
+  video_player: ^2.8.1
+      # --- END OF ADDED LINES ---
+
   # Your existing packages
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1

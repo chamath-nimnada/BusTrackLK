@@ -18,6 +18,8 @@ class DriverInfo {
     required this.creditScore,
   });
 
+
+
   // A factory constructor to create DriverInfo from the JSON
   // response from your backend's /api/login
   factory DriverInfo.fromJson(Map<String, dynamic> json) {

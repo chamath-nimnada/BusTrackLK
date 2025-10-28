@@ -1,126 +1,83 @@
 import 'dart:async';
-import 'package:driver_ui/models/driver_info.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:location/location.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:driver_ui/models/driver_info.dart'; // <-- Uses your DriverInfo model
+import 'package:flutter/foundation.dart';
 
 class LocationService {
-  Location _location = Location();
-  StreamSubscription<LocationData>? _locationSubscription;
-  bool _isServiceEnabled = false;
-  PermissionStatus _permissionStatus = PermissionStatus.denied;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  Timer? _locationTimer; // Timer to simulate location updates
 
-  // TODO: Replace with your actual backend IP/domain
-  final String _baseUrl = "http://10.0.2.2:8081/api/location";
+  // The Firestore collection where locations will be stored
+  static const String _collectionName = 'live_bus_locations';
 
-  // Call this to start sharing location
+  // Starting location for fake data (e.g., Colombo)
+  double _fakeLat = 6.9271;
+  double _fakeLng = 79.8612;
+
+  /// Starts sharing the driver's location
   Future<bool> startSharing(DriverInfo driverInfo, String routeNo) async {
-    // 1. Check if location service is enabled
-    _isServiceEnabled = await _location.serviceEnabled();
-    if (!_isServiceEnabled) {
-      _isServiceEnabled = await _location.requestService();
-      if (!_isServiceEnabled) {
-        print("Location service is not enabled.");
-        return false;
+    try {
+      // Stop any existing timers
+      _locationTimer?.cancel();
+
+      // Reset fake location on each start
+      _fakeLat = 6.9271;
+      _fakeLng = 79.8612;
+
+      // 1. Create the initial document in Firestore
+      // We use the driver's UID as the document ID for easy access
+      await _firestore.collection(_collectionName).doc(driverInfo.uid).set({
+        'driverName': driverInfo.driverName, // From your model
+        'busNo': driverInfo.busNumber,       // From your model
+        'routeNo': routeNo,                  // From the dropdown
+        'driverUid': driverInfo.uid,         // From your model
+        'location': GeoPoint(_fakeLat, _fakeLng),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+
+      // 2. Start a timer to update the location every 10 seconds
+      _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+        // Simulate movement by slightly changing coordinates
+        _fakeLat += 0.0005; // Move slightly north
+        _fakeLng += 0.0002;
+
+        // 3. Update the location in Firestore
+        _firestore.collection(_collectionName).doc(driverInfo.uid).update({
+          'location': GeoPoint(_fakeLat, _fakeLng),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+
+        if (kDebugMode) {
+          print("Updated location for ${driverInfo.uid}: $_fakeLat, $_fakeLng");
+        }
+      });
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error starting sharing: $e");
       }
+      return false;
     }
-
-    // 2. Check for location permission
-    _permissionStatus = await _location.hasPermission();
-    if (_permissionStatus == PermissionStatus.denied) {
-      _permissionStatus = await _location.requestPermission();
-      if (_permissionStatus != PermissionStatus.granted && _permissionStatus != PermissionStatus.grantedLimited) {
-        print("Location permission not granted.");
-        return false;
-      }
-    }
-
-    // 3. Try to enable background mode
-    if (_permissionStatus == PermissionStatus.granted || _permissionStatus == PermissionStatus.grantedLimited) {
-      try {
-        await _location.enableBackgroundMode(enable: true);
-        print("Background mode successfully enabled.");
-      } catch (e) {
-        print("--- EMULATOR WARNING ---");
-        print("Failed to enable background mode: $e");
-        print("This is expected on an emulator and will be ignored. ");
-        print("Proceeding with foreground/mock location for testing. ");
-        // DO NOT return false. We catch and continue as per the guide.
-      }
-    }
-
-    // 4. Start listening to location changes
-    // This will now pick up mock locations from the emulator
-    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
-      print("New Location: ${currentLocation.latitude}, ${currentLocation.longitude}");
-      // Send this update to the backend
-      _updateLocationOnBackend(currentLocation, driverInfo, routeNo);
-    });
-
-    print("Location sharing started.");
-    return true;
   }
 
-  // Call this to stop sharing location
+  /// Stops sharing the driver's location
   Future<void> stopSharing(String driverUid) async {
-    // 1. Stop the location stream
-    if (_locationSubscription != null) {
-      _locationSubscription!.cancel();
-      _locationSubscription = null;
-    }
-
-    // 2. Disable background mode
     try {
-      await _location.enableBackgroundMode(enable: false);
-    } catch (e) {
-      print("Failed to disable background mode: $e");
-    }
+      // 1. Stop the update timer
+      _locationTimer?.cancel();
+      _locationTimer = null;
 
-    // 3. Tell the backend to delete the location document
-    try {
-      final response = await http.post(
-        Uri.parse("$_baseUrl/stop"),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'driverUid': driverUid}),
-      );
+      // 2. Delete the driver's location document from Firestore
+      await _firestore.collection(_collectionName).doc(driverUid).delete();
 
-      if (response.statusCode == 200) {
-        print("Successfully stopped location sharing on backend.");
-      } else {
-        print("Failed to stop location sharing on backend: ${response.body}");
+      if (kDebugMode) {
+        print("Stopped sharing for $driverUid");
       }
     } catch (e) {
-      print("Error calling /stop endpoint: $e");
-    }
-  }
-
-  // Private method to send data to the backend
-  Future<void> _updateLocationOnBackend(
-      LocationData locationData, DriverInfo driverInfo, String routeNo) async {
-    try {
-      // Note: driverInfo.uid should be the Firebase UID
-      final body = {
-        'driverUid': driverInfo.uid, // <-- THIS LINE IS NOW CORRECT
-        'driverName': driverInfo.driverName,
-        'busNo': driverInfo.busNumber,
-        'routeNo': routeNo,
-        'location': {
-          'latitude': locationData.latitude,
-          'longitude': locationData.longitude,
-        },
-      };
-
-      final response = await http.post(
-        Uri.parse("$_baseUrl/update"),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(body),
-      );
-
-      if (response.statusCode != 200) {
-        print("Failed to update location to backend: ${response.body}");
+      if (kDebugMode) {
+        print("Error stopping sharing: $e");
       }
-    } catch (e) {
-      print("Error calling /update endpoint: $e");
     }
   }
 }
