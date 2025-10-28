@@ -29,17 +29,28 @@ class LocationService {
     _permissionStatus = await _location.hasPermission();
     if (_permissionStatus == PermissionStatus.denied) {
       _permissionStatus = await _location.requestPermission();
-      if (_permissionStatus != PermissionStatus.granted) {
+      if (_permissionStatus != PermissionStatus.granted && _permissionStatus != PermissionStatus.grantedLimited) {
         print("Location permission not granted.");
         return false;
       }
     }
 
-    // 3. Enable background mode
-    // This is crucial for the location to update when app is not in foreground
-    await _location.enableBackgroundMode(enable: true);
+    // 3. Try to enable background mode
+    if (_permissionStatus == PermissionStatus.granted || _permissionStatus == PermissionStatus.grantedLimited) {
+      try {
+        await _location.enableBackgroundMode(enable: true);
+        print("Background mode successfully enabled.");
+      } catch (e) {
+        print("--- EMULATOR WARNING ---");
+        print("Failed to enable background mode: $e");
+        print("This is expected on an emulator and will be ignored. ");
+        print("Proceeding with foreground/mock location for testing. ");
+        // DO NOT return false. We catch and continue as per the guide.
+      }
+    }
 
     // 4. Start listening to location changes
+    // This will now pick up mock locations from the emulator
     _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
       print("New Location: ${currentLocation.latitude}, ${currentLocation.longitude}");
       // Send this update to the backend
@@ -59,7 +70,11 @@ class LocationService {
     }
 
     // 2. Disable background mode
-    await _location.enableBackgroundMode(enable: false);
+    try {
+      await _location.enableBackgroundMode(enable: false);
+    } catch (e) {
+      print("Failed to disable background mode: $e");
+    }
 
     // 3. Tell the backend to delete the location document
     try {
