@@ -10,12 +10,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
+@CrossOrigin(origins = "http://localhost:5173")
 public class BookingController {
 
     @Autowired
     private BookingService bookingService;
 
     @GetMapping("/all")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<List<Booking>> getAllBookings() {
         try {
             List<Booking> bookings = bookingService.getAllBookings();

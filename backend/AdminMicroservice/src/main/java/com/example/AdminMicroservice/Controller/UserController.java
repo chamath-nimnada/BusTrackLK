@@ -10,13 +10,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     @Autowired
     private UserService authService;
 
     @PostMapping("/login")
+    @CrossOrigin(origins = "http://localhost:5173")
     public User login(@RequestHeader("Authorization") String authHeader) throws FirebaseAuthException {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new RuntimeException("Missing or invalid Authorization header");

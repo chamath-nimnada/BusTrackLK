@@ -8,19 +8,21 @@ public class Admin {
     private int age;
     private String name;
     private String password;
+    private String email;        // New email field
 
     // Default constructor
     public Admin() {
     }
 
     // All-args constructor
-    public Admin(String id, String adminStatus, String username, int age, String name, String password) {
+    public Admin(String id, String adminStatus, String username, int age, String name, String password, String email) {
         this.id = id;
         this.adminStatus = adminStatus;
         this.username = username;
         this.age = age;
         this.name = name;
         this.password = password;
+        this.email = email;
     }
 
     // Getters and Setters
@@ -71,5 +73,13 @@ public class Admin {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -6,10 +6,12 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -23,23 +25,26 @@ public class AdminService {
 
 
 
-    public Admin addAdmin(Admin admin) throws Exception {
-        // Step 1: Create Firebase Auth user
+    public String createAdmin(Admin admin) throws FirebaseAuthException, ExecutionException, InterruptedException {
+        // 1. Generate a unique ID for Firestore document if not provided
+        if (admin.getId() == null || admin.getId().isEmpty()) {
+            admin.setId(UUID.randomUUID().toString());
+        }
+
+        // 2. Create user in Firebase Authentication
         UserRecord.CreateRequest request = new UserRecord.CreateRequest()
-                .setEmail(admin.getUsername() + "@example.com") // using username as email base
+                .setEmail(admin.getEmail())
+                .setEmailVerified(false)
                 .setPassword(admin.getPassword())
-                .setDisplayName(admin.getName())
-                .setDisabled(false);
+                .setDisplayName(admin.getUsername());
 
         UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
 
-        // Step 2: Set the Firebase UID as document ID
+        // Optional: you can set the UID in your Firestore document
         admin.setId(userRecord.getUid());
 
-        // Step 3: Save in Firestore
-        adminRepository.saveAdmin(admin);
-
-        return admin;
+        // 3. Save admin details in Firestore
+        return adminRepository.save(admin);
     }
 
     public String updateAdmin(Admin admin) throws ExecutionException, InterruptedException {

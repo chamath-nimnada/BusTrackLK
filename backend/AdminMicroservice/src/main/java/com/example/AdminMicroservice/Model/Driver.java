@@ -2,51 +2,97 @@ package com.example.AdminMicroservice.Model;
 
 public class Driver {
 
-    private String id; // Firestore document ID
-    private String name;
-    private int age;
-    private String username;
-    private String password;
-    private String driverStatus;
-    private String registrationDate;
+    private String busNo;
+    private String busRoute;
+    private String email;
     private String nic;
+    private String phoneNo;
+    private String status;
+    private String uid;
 
-    public Driver() {}
+    // ✅ Default constructor (required for Firebase / serialization)
+    public Driver() {
+    }
 
-    public Driver(String id, String name, int age, String username, String password, String driverStatus, String registrationDate, String nic) {
-        this.id = id;
-        this.name = name;
-        this.age = age;
-        this.username = username;
-        this.password = password;
-        this.driverStatus = driverStatus;
-        this.registrationDate = registrationDate;
+    // ✅ Parameterized constructor
+    public Driver(String busNo, String busRoute, String email, String nic, String phoneNo, String status, String uid) {
+        this.busNo = busNo;
+        this.busRoute = busRoute;
+        this.email = email;
+        this.nic = nic;
+        this.phoneNo = phoneNo;
+        this.status = status;
+        this.uid = uid;
+    }
+
+    // ✅ Getters and Setters
+    public String getBusNo() {
+        return busNo;
+    }
+
+    public void setBusNo(String busNo) {
+        this.busNo = busNo;
+    }
+
+    public String getBusRoute() {
+        return busRoute;
+    }
+
+    public void setBusRoute(String busRoute) {
+        this.busRoute = busRoute;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getNic() {
+        return nic;
+    }
+
+    public void setNic(String nic) {
         this.nic = nic;
     }
 
-    // Getters and Setters
+    public String getPhoneNo() {
+        return phoneNo;
+    }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public void setPhoneNo(String phoneNo) {
+        this.phoneNo = phoneNo;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getStatus() {
+        return status;
+    }
 
-    public int getAge() { return age; }
-    public void setAge(int age) { this.age = age; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getUid() {
+        return uid;
+    }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
-    public String getDriverStatus() { return driverStatus; }
-    public void setDriverStatus(String driverStatus) { this.driverStatus = driverStatus; }
-
-    public String getRegistrationDate() { return registrationDate; }
-    public void setRegistrationDate(String registrationDate) { this.registrationDate = registrationDate; }
-
-    public String getNic() { return nic; }
-    public void setNic(String nic) { this.nic = nic; }
+    // ✅ Optional: toString() for debugging
+    @Override
+    public String toString() {
+        return "Driver{" +
+                "busNo='" + busNo + '\'' +
+                ", busRoute='" + busRoute + '\'' +
+                ", email='" + email + '\'' +
+                ", nic='" + nic + '\'' +
+                ", phoneNo='" + phoneNo + '\'' +
+                ", status='" + status + '\'' +
+                ", uid='" + uid + '\'' +
+                '}';
+    }
 }

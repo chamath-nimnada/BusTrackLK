@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/buses")
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:5173")
 public class BusController {
 
     @Autowired
     private BusService busService;
 
     @PostMapping("/add")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> addBus(@RequestBody Bus bus) {
         try {
             String id = busService.addBus(bus);

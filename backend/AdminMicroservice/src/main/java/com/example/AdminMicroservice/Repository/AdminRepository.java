@@ -16,11 +16,11 @@ public class AdminRepository {
 
     private static final String COLLECTION_NAME = "admins";
 
-    public String saveAdmin(Admin admin) throws ExecutionException, InterruptedException {
+    public String save(Admin admin) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
-        ApiFuture<WriteResult> result = db.collection(COLLECTION_NAME)
-                .document(admin.getId())
-                .set(admin);
+        CollectionReference adminCollection = db.collection(COLLECTION_NAME);
+
+        ApiFuture<WriteResult> result = adminCollection.document(admin.getId()).set(admin);
         return result.get().getUpdateTime().toString();
     }
 

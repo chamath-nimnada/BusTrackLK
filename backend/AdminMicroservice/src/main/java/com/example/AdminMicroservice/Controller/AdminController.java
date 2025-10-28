@@ -2,6 +2,7 @@ package com.example.AdminMicroservice.Controller;
 
 import com.example.AdminMicroservice.Model.Admin;
 import com.example.AdminMicroservice.Service.AdminService;
+import com.google.firebase.auth.FirebaseAuthException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/admins")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
     private final AdminService adminService;
@@ -24,16 +25,20 @@ public class AdminController {
 
 
     @PostMapping("/add")
-    public Admin addAdmin(@RequestBody Admin admin) {
+    @CrossOrigin(origins = "http://localhost:5173")
+    public ResponseEntity<String> createAdmin(@RequestBody Admin admin) {
         try {
-            return adminService.addAdmin(admin);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error adding admin: " + e.getMessage());
+            String updateTime = adminService.createAdmin(admin);
+            return ResponseEntity.ok("Admin created successfully at: " + updateTime);
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(500).body("Firebase Authentication error: " + e.getMessage());
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).body("Firestore error: " + e.getMessage());
         }
     }
 
     @PutMapping("/update/{id}")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> updateAdmin(@PathVariable String id, @RequestBody Admin admin) {
         try {
             admin.setId(id); // ensure we update the correct document

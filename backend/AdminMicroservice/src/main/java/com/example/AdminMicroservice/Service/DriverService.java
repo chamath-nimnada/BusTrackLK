@@ -4,6 +4,7 @@ import com.example.AdminMicroservice.Model.Driver;
 import com.example.AdminMicroservice.Repository.DriverRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -17,13 +18,18 @@ public class DriverService {
 
     public String addDriver(Driver driver) throws ExecutionException, InterruptedException {
         // Set default driverStatus if missing
-        if (driver.getDriverStatus() == null || driver.getDriverStatus().isEmpty()) {
-            driver.setDriverStatus("pending");
+        if (driver.getStatus() == null || driver.getStatus().isEmpty()) {
+            driver.setStatus("pending");
         }
         return driverRepository.saveDriver(driver);
     }
 
     public String updateDriverStatus(String driverId, String newStatus) throws ExecutionException, InterruptedException {
         return driverRepository.updateDriverStatus(driverId, newStatus);
+    }
+
+
+    public List<Driver> getAllDrivers() throws ExecutionException, InterruptedException {
+        return driverRepository.getAllDrivers();
     }
 }

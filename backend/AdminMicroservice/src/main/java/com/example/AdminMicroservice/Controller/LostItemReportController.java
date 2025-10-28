@@ -11,13 +11,14 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/lostItemReports")
-@CrossOrigin(origins = "*") // allow frontend access
+@CrossOrigin(origins = "http://localhost:5173")
 public class LostItemReportController {
 
     @Autowired
     private LostItemReportService lostItemReportService;
 
     @GetMapping("/all")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<List<LostItemReport>> getAllLostItemReports() {
         try {
             List<LostItemReport> reports = lostItemReportService.getAllLostItemReports();

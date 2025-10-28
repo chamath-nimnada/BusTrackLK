@@ -8,12 +8,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/schedules")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ScheduleController {
 
     @Autowired
     private ScheduleService scheduleService;
 
     @PostMapping("/add")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> addSchedule(@RequestBody Schedule schedule) {
         try {
             String id = scheduleService.addSchedule(schedule);
@@ -25,6 +27,7 @@ public class ScheduleController {
     }
 
     @PutMapping("/update/{id}")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> updateSchedule(@PathVariable String id, @RequestBody Schedule schedule) {
         try {
             schedule.setId(id); // set the ID from the URL

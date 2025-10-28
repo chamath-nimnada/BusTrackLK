@@ -6,10 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/drivers")
+@CrossOrigin(origins = "http://localhost:5173")
 public class DriverController {
 
     private final DriverService driverService;
@@ -19,6 +21,7 @@ public class DriverController {
     }
 
     @PostMapping("/add")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> addDriver(@RequestBody Driver driver) {
         try {
             String driverId = driverService.addDriver(driver);
@@ -32,6 +35,7 @@ public class DriverController {
     }
 
     @PatchMapping("/{id}/status")
+    @CrossOrigin(origins = "http://localhost:5173")
     public ResponseEntity<String> updateDriverStatus(
             @PathVariable String id,
             @RequestParam("status") String newStatus) {
@@ -43,6 +47,18 @@ public class DriverController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("❌ Failed to update driver status: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/all")
+    @CrossOrigin(origins = "http://localhost:5173")
+    public ResponseEntity<?> getAllDrivers() {
+        try {
+            List<Driver> drivers = driverService.getAllDrivers();
+            return ResponseEntity.ok(drivers);
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("❌ Error retrieving driver details: " + e.getMessage());
         }
     }
 }
