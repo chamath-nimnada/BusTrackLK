@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.driver_ui"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35 // UPDATED
     ndkVersion = "27.0.12077973"  // Override Flutter's default NDK version
 
     compileOptions {
@@ -26,11 +26,11 @@ android {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.driver_ui"
         // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+// For more information, see: https://flutter.dev/to/review-gradle-config.
 
         minSdk = 23  // Override Flutter's default - Firebase Auth requires 23
 
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35 // UPDATED
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -38,7 +38,7 @@ android {
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+// Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
