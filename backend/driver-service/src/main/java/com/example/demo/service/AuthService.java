@@ -99,7 +99,6 @@ public class AuthService {
             if (!"approved".equalsIgnoreCase(currentStatus)) {
                 System.out.println("Login attempt failed for UID: " + uid + ". Status is: " + currentStatus);
                 // Throw a specific exception for pending/rejected accounts
-                // Using ResponseStatusException sends a proper HTTP status code (403 Forbidden)
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account not approved. Status: " + (currentStatus != null ? currentStatus : "Unknown"));
             }
             // --- END STATUS CHECK ---
