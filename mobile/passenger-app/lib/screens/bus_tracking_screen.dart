@@ -24,11 +24,10 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
   List<LiveBusResult> _trackingResults = []; // Use new model
   DateTime _selectedDate = DateTime.now();
 
-  // Mock locations for dropdowns. This should use ScheduleService like other screens.
-  // For this example, we'll keep the mock list but use the "start" one as the Route No.
+  // Mock locations for dropdowns.
   final List<String> _locations = ['100', '101', '122', '138', '17'];
   String? _startLocation; // This will be used as the Route No
-  String? _endLocation;
+  // --- REMOVED _endLocation ---
 
   // --- Map-specific variables
   GoogleMapController? _mapController;
@@ -98,7 +97,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
       // Call the new service. We use startLocation as the route number.
       final results = await _trackingService.searchLiveBuses(
         startLocation: _startLocation!,
-        endLocation: _endLocation ?? "", // End location isn't critical for this query
+        endLocation: "", // --- REMOVED _endLocation ---
         date: DateFormat('yyyy.MM.dd').format(_selectedDate),
       );
 
@@ -127,7 +126,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
       _searchErrorMessage = null;
       _trackingResults = [];
       _startLocation = null;
-      _endLocation = null;
+      // --- REMOVED _endLocation ---
       _selectedDate = DateTime.now();
       _mapMarkers = {}; // Clear map markers
     });
@@ -218,13 +217,11 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
       ),
       child: Column(
         children: [
-          // 8. UPDATE DROPDOWNS. "Start" is now "Route"
-          _buildLocationDropdown(isStart: true),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Icon(Icons.swap_vert, color: Colors.white70),
-          ),
-          _buildLocationDropdown(isStart: false),
+          // --- 8. MODIFIED: ONLY SHOW ONE DROPDOWN ---
+          _buildLocationDropdown(),
+          // --- REMOVED SWAP ICON ---
+          // --- REMOVED SECOND DROPDOWN ---
+          SizedBox(height: 15), // Added space to replace the removed dropdown
           Divider(color: Colors.white24, height: 30),
           Row(
             children: [
@@ -263,14 +260,13 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
     );
   }
 
-  Widget _buildLocationDropdown({required bool isStart}) {
-    // 9. UPDATE HINTS to clarify Route vs Location
+  // --- 9. MODIFIED: SIMPLIFIED DROPDOWN WIDGET ---
+  Widget _buildLocationDropdown() {
     return DropdownButtonFormField<String>(
-      value: isStart ? _startLocation : _endLocation,
+      value: _startLocation,
       onChanged: (value) {
         setState(() {
-          if (isStart) _startLocation = value;
-          else _endLocation = value;
+          _startLocation = value;
           _searchErrorMessage = null; // Clear error on change
         });
       },
@@ -280,7 +276,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       ),
-      hint: Text(isStart ? 'Select Route (e.g., 100)' : 'End Location (Optional)', style: TextStyle(color: Colors.black54)),
+      hint: Text('Select Route (e.g., 100)', style: TextStyle(color: Colors.black54)),
       dropdownColor: Colors.white,
       style: TextStyle(color: Colors.black87),
       items: _locations.map((location) {
